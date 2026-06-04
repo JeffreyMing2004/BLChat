@@ -163,12 +163,13 @@ public class BilibiliClient {
         }
 
         @Override
-        public void onClose(WebSocket webSocket, int statusCode, String reason) {
+        public CompletionStage<?> onClose(WebSocket webSocket, int statusCode, String reason) {
             LOGGER.info("Bilibili WebSocket closed: {} {}", statusCode, reason);
             if (isRunning) {
                 LOGGER.info("Reconnecting in 5 seconds...");
                 SCHEDULER.schedule(BilibiliClient.this::connect, 5, TimeUnit.SECONDS);
             }
+            return WebSocket.Listener.super.onClose(webSocket, statusCode, reason);
         }
 
         @Override
