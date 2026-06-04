@@ -37,6 +37,7 @@ public class BilibiliClient {
     private final MinecraftServer server;
     private String gameId;
     private boolean isRunning = false;
+    private java.util.concurrent.ScheduledFuture<?> heartbeatTask;
 
     public BilibiliClient(MinecraftServer server) {
         this.server = server;
@@ -67,7 +68,8 @@ public class BilibiliClient {
     private void connect() {
         try {
             JsonConfigManager.ConfigData config = JsonConfigManager.getInstance();
-            String url = "https://live-open.bilibili.com/v2/app/start";
+            // Try live-open.biliapi.com as it's more reliable in some environments
+            String url = "https://live-open.biliapi.com/v2/app/start";
             JsonObject body = new JsonObject();
             body.addProperty("app_id", config.appId);
             body.addProperty("code", config.roomCode);
@@ -93,6 +95,11 @@ public class BilibiliClient {
 
             JsonObject data = respJson.getAsJsonObject("data");
             gameId = data.get("game_info").getAsJsonObject().get("game_id").getAsString();
+            
+            // Start Project Heartbeat (v2/app/heartbeat) - every 20 seconds
+            if (heartbeatTask != null) heartbeatTask.cancel(true);
+            heartbeatTask = SCHEDULER.scheduleAtFixedRate(this::sendHeartbeat, 20, 20, TimeUnit.SECONDS);
+
             JsonObject websocketInfo = data.getAsJsonObject("websocket_info");
             String authBody = websocketInfo.get("auth_body").getAsString();
             List<String> wssLinks = GSON.fromJson(websocketInfo.get("wss_link"), List.class);
@@ -114,13 +121,44 @@ public class BilibiliClient {
 
         } catch (Exception e) {
             LOGGER.error("Error connecting to Bilibili", e);
+            String errorMsg = e.getMessage();
+            if (e.getCause() instanceof java.nio.channels.UnresolvedAddressException || e instanceof java.nio.channels.UnresolvedAddressException) {
+                errorMsg = "DNS Resolve Failed (UnresolvedAddressException). Please check your network or DNS settings.";
+            }
+            String finalErrorMsg = errorMsg;
+            server.execute(() -> server.getPlayerList().broadcastSystemMessage(Component.translatable("mod.bilibilichatmcforge.error.app_start_failed", finalErrorMsg), false));
             isRunning = false;
+        }
+    }
+
+    private void sendHeartbeat() {
+        if (!isRunning || gameId == null) return;
+        try {
+            String url = "https://live-open.biliapi.com/v2/app/heartbeat";
+            JsonObject body = new JsonObject();
+            body.addProperty("game_id", gameId);
+            String bodyStr = GSON.toJson(body);
+
+            Map<String, String> headers = BilibiliAuth.getHeaders(bodyStr);
+            HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .POST(HttpRequest.BodyPublishers.ofString(bodyStr));
+
+            headers.forEach(requestBuilder::header);
+            HTTP_CLIENT.sendAsync(requestBuilder.build(), HttpResponse.BodyHandlers.ofString());
+        } catch (Exception e) {
+            LOGGER.error("Error sending Bilibili heartbeat", e);
         }
     }
 
     public void stop() {
         if (!isRunning) return;
         isRunning = false;
+
+        if (heartbeatTask != null) {
+            heartbeatTask.cancel(true);
+            heartbeatTask = null;
+        }
 
         if (webSocket != null) {
             webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "Stopping");
@@ -130,7 +168,7 @@ public class BilibiliClient {
             JsonConfigManager.ConfigData config = JsonConfigManager.getInstance();
             CompletableFuture.runAsync(() -> {
                 try {
-                    String url = "https://live-open.bilibili.com/v2/app/end";
+                    String url = "https://live-open.biliapi.com/v2/app/end";
                     JsonObject body = new JsonObject();
                     body.addProperty("app_id", config.appId);
                     body.addProperty("game_id", gameId);
