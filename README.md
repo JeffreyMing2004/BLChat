@@ -1,97 +1,267 @@
-# Minecraft Bilibili Live Danmu Viewer
+# BilibiliChat-MC-Forge
 
 <div align="center">
 
-![Minecraft](https://img.shields.io/badge/Minecraft-1.20+-green)
+![Minecraft](https://img.shields.io/badge/Minecraft-1.20.1-green)
 ![Java](https://img.shields.io/badge/Java-17+-orange)
+![Node.js](https://img.shields.io/badge/Node.js-18+-brightgreen)
 ![Bilibili](https://img.shields.io/badge/Bilibili-Live-blue)
 ![License](https://img.shields.io/badge/License-All_Rights_Reserved-yellow)
 
-在 Minecraft 游戏内实时查看 B 站直播间弹幕
+在 Minecraft 游戏内实时查看 B 站直播弹幕 · 提供 Web 管理面板与 OBS 弹幕覆盖层
 
 </div>
 
-## 介绍
+---
 
-这是一个 Minecraft Forge Mod，用于通过「哔哩哔哩直播开放平台」连接直播间弹幕 WebSocket，并将弹幕、礼物、SC、大航海等消息转发到游戏内聊天栏。
+## 项目简介
 
-## 功能
+BilibiliChat-MC-Forge 是一个完整的 B 站直播弹幕 Minecraft 集成方案，包含两个核心组件：
 
-- 游戏内显示弹幕消息
-- 游戏内显示礼物、SC、大航海等事件
-- 支持在 Mod 配置界面填写开放平台参数
-- 提供管理员指令快速更新身份码并触发重连
+| 组件 | 说明 |
+|------|------|
+| **MC Forge Mod** | Minecraft 模组，将 B 站弹幕实时显示在游戏聊天栏 |
+| **H5 管理插件** | Web 端管理面板 + OBS 透明弹幕覆盖层 |
 
-## 版本与依赖
+两者通过「哔哩哔哩直播开放平台」API 连接同一个直播间弹幕源。
 
-- Minecraft：1.20.1（理论上 1.20+ 可能可用，以实际构建目标为准）
-- Forge：47.4.20（见 gradle.properties）
-- Java：17
+## 功能特性
 
-## 安装
+### MC 模组
 
-1. 安装对应版本的 Minecraft Forge
-2. 将本 Mod 的 Jar 放入 `mods/` 目录
-3. 启动游戏
+- 游戏聊天栏实时显示弹幕消息
+- 礼物赠送、Super Chat、大航海开通事件同步
+- 游戏内 Mod 配置界面，填写开放平台参数
+- 管理员指令 `/bililive roomcode <code>` 快速切换身份码
 
-## 配置
+### H5 管理面板
 
-本 Mod 使用哔哩哔哩开放平台的以下参数：
+- 主播身份码验证，获取主播昵称、头像、房间号
+- 头像通过后端代理获取，绕过 B 站防盗链
+- 识别码机制：对外展示使用随机识别码，不暴露主播身份码
+- 识别码持久化存储（SQLite），重启不丢失
+- 实时弹幕预览（弹幕、礼物、SC、大航海，颜色区分）
+- MC 模组版本检测，自动获取 GitHub Releases 最新版本
 
-- Access Key
-- Access Secret
-- App ID
+### OBS 弹幕覆盖层
+
+- 独立透明页面 `/danmu/{识别码}`，适配 OBS 浏览器源
+- 无需登录即可访问，直接添加到 OBS
+- 断线自动重连
+- 文字阴影适配各种直播背景
+
+## 项目结构
+
+```
+bilibiliChat-MC-Forge/
+├── src/                          # MC Forge Mod 源码
+│   └── main/java/net/ming/bilibilichatmcforge/
+│       ├── client/               # 客户端配置界面
+│       ├── utils/                # B 站认证与连接工具
+│       ├── Bililichatmcforge.java  # 模组主类
+│       └── Config.java           # 配置管理
+├── h5-plugin/                    # H5 管理插件
+│   ├── client/                   # 前端（Vue 3 + Vite）
+│   │   └── src/
+│   │       ├── App.vue           # 主页面（登录 + 管理面板）
+│   │       ├── DanmuView.vue     # OBS 弹幕覆盖层组件
+│   │       └── api.js            # API 请求封装
+│   ├── server/                   # 后端（Node.js + Express）
+│   │   └── src/
+│   │       ├── index.js          # 服务入口
+│   │       ├── auth.js           # 登录与主播信息接口
+│   │       ├── bilibiliApi.js    # B 站开放平台 API 封装
+│   │       ├── bilibiliAuth.js   # B 站请求签名
+│   │       ├── danmuWs.js        # 弹幕 WebSocket 桥接
+│   │       ├── codeMap.js        # 识别码 ↔ 身份码映射（SQLite）
+│   │       ├── config.js         # 环境变量读取
+│   │       └── token.js          # JWT 签发与验证
+│   └── start.bat                 # Windows 一键启动脚本
+├── build.gradle                  # Forge 构建配置
+└── gradle.properties             # 模组版本与元数据
+```
+
+## 快速开始
+
+### 前置条件
+
+- **MC 模组**：Java 17、Minecraft 1.20.1 + Forge 47.4.20
+- **H5 插件**：Node.js 18+
+- **B 站开放平台**：已申请并获得 Access Key、Access Secret、App ID
+
+申请地址：[哔哩哔哩直播开放平台](https://open-live.bilibili.com/)
+
+### 一、部署 H5 管理插件
+
+#### 1. 配置环境变量
+
+```bash
+cd h5-plugin/server
+cp .env.example .env
+```
+
+编辑 `.env` 文件，填入以下内容：
+
+```env
+BILIBILI_ACCESS_KEY=你的AccessKey
+BILIBILI_ACCESS_SECRET=你的AccessSecret
+BILIBILI_APP_ID=你的AppID
+JWT_SECRET=自定义一个随机字符串
+PORT=3000
+CLIENT_ORIGIN=https://your-domain.com
+```
+
+#### 2. 安装依赖
+
+```bash
+# 后端
+cd h5-plugin/server
+npm install
+
+# 前端
+cd ../client
+npm install
+```
+
+#### 3. 本地开发
+
+Windows 用户可直接双击 `h5-plugin/start.bat` 一键启动前后端。
+
+手动启动：
+
+```bash
+# 终端 1：启动后端
+cd h5-plugin/server
+npm run dev
+
+# 终端 2：启动前端
+cd h5-plugin/client
+npm run dev
+```
+
+前端开发服务器默认运行在 `http://localhost:5174`，API 请求自动代理到后端 `http://localhost:3000`。
+
+#### 4. 生产部署
+
+```bash
+# 构建前端
+cd h5-plugin/client
+npm run build
+
+# 启动后端（自动托管前端静态文件）
+cd ../server
+npm start
+```
+
+生产环境只有一个服务运行在 `PORT`（默认 3000），同时提供 API 和前端页面。
+
+### 二、安装 MC 模组
+
+1. 安装 Minecraft Forge 1.20.1
+2. 从 [GitHub Releases](https://github.com/JeffreyMing2004/BilibiliChat-MC-Forge/releases) 下载最新 `.jar` 文件
+3. 将 `.jar` 放入 Minecraft 的 `mods/` 目录
+4. 启动游戏
+
+### 三、配置 MC 模组
+
+**方式一：游戏内配置**
+
+进入 Mods 列表 → 找到 BilibiliChat → 打开配置界面，填写：
+- B 站开放平台 Access Key / Secret / App ID
+- H5 插件服务地址（如 `https://your-domain.com`）
 - 主播身份码（roomCode）
 
-配置方式二选一：
+**方式二：编辑配置文件**
 
-1. 游戏内 Mod 配置界面：进入 Mods 列表，找到本 Mod 后打开配置界面填写并保存
-2. 编辑配置文件：`config/bilibilichat-config.json`
+编辑 Minecraft 实例目录下的 `config/bilibilichat-config.json`。
 
-注意：Access Key / Secret 属于敏感信息，不要提交到仓库、不要发送到公开群聊或截图中。
+**方式三：管理员指令**
 
-## 指令
+在游戏内聊天栏输入（需 OP 权限）：
 
-需要 OP 权限（permission level 2）：
-
-```text
-/bilibili roomcode <code>
+```
+/bililive roomcode <你的身份码>
 ```
 
-该指令会写入配置并尝试重连。
+## 使用流程
 
-## 开发与构建
-
-要求：Java 17
-
-```bash
-./gradlew build
+```
+主播在 B 站开播 → 获取身份码 → 在 H5 面板验证 → 获取 OBS 弹幕地址
+                                         ↓
+                              MC 模组自动连接弹幕 → 游戏内显示弹幕
 ```
 
-构建产物默认在：
+1. 主播在 B 站开播，从[开播页面](https://link.bilibili.com/p/center/index#/my-room/start-live)获取身份码
+2. 在 H5 管理面板（`https://your-domain.com`）输入身份码完成验证
+3. 验证成功后获得：
+   - **OBS 弹幕地址**：`https://your-domain.com/danmu/{识别码}`，添加到 OBS 浏览器源
+   - **MC 模组下载**：获取最新版本模组
+4. 在 MC 模组配置中填入服务地址和身份码，游戏内即可显示弹幕
 
-- `build/libs/*.jar`
+## API 接口
 
-常用任务（ForgeGradle）：
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| `/api/login` | POST | 身份码验证，返回 JWT + 识别码 + 主播信息 |
+| `/api/me` | GET | 查询当前登录状态 |
+| `/api/room-info` | GET | 获取主播信息（需 JWT） |
+| `/api/avatar` | GET | 头像代理（绕过 B 站防盗链） |
+| `/api/mod/latest` | GET | 获取 GitHub Releases 最新版本 |
+| `/api/health` | GET | 健康检查 |
+| `/ws/danmu/{识别码}` | WS | 公开弹幕 WebSocket（无需认证） |
+| `/danmu/ws?token=` | WS | 管理弹幕 WebSocket（需 JWT） |
 
-```bash
-./gradlew runClient
-./gradlew runServer
+## 反向代理配置（Nginx）
+
+```nginx
+server {
+    server_name your-domain.com;
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    location /ws/ {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+
+    location /danmu/ws {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+
+    listen 443 ssl;
+    # ssl_certificate /path/to/cert.pem;
+    # ssl_certificate_key /path/to/key.pem;
+}
 ```
 
-## CI（GitHub Actions）
+## 技术栈
 
-仓库已配置在 push / PR 时自动构建，工作流文件位于：
+| 层 | 技术 |
+|----|------|
+| MC 模组 | Java 17 · Minecraft Forge 47.x |
+| 前端 | Vue 3 · Vite 5 |
+| 后端 | Node.js · Express · WebSocket |
+| 存储 | SQLite（sql.js，纯 WASM） |
+| 认证 | JWT |
+| 数据源 | 哔哩哔哩直播开放平台 API v2 |
 
-- `.github/workflows/build.yml`
+## 注意事项
 
-## 贡献
-
-欢迎提交 Issue / Pull Request。
-
-- 贡献流程与约定见 [CONTRIBUTING.md](CONTRIBUTING.md)
-- 安全相关问题与敏感信息处理见 [SECURITY.md](SECURITY.md)
+- `BILIBILI_ACCESS_KEY` 等凭据属于敏感信息，**不要**提交到仓库或公开分享
+- B 站头像通过后端代理获取，前端不直接请求 B 站 CDN
+- 识别码为 8 位随机字符串，同一身份码始终映射到同一识别码
+- OBS 弹幕页面断线后会自动重连（3 秒间隔）
+- GitHub Releases 版本信息缓存 10 分钟
 
 ## License
 
-当前工程元数据配置为 “All Rights Reserved”。如果你希望以 MIT 或其他协议开源，请补充对应 LICENSE 文件，并同步更新 `gradle.properties` 的 `mod_license` 与 README 标识。
+当前工程为 All Rights Reserved。详情见 [SECURITY.md](SECURITY.md)。
