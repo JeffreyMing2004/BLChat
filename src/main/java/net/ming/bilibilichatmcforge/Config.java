@@ -31,16 +31,22 @@ public class Config {
             .comment("Bilibili Open Live App ID")
             .defineInRange("appId", 0L, 0L, Long.MAX_VALUE);
 
+    private static final ForgeConfigSpec.ConfigValue<String> ROOM_CODE = BUILDER
+            .comment("Bilibili Open Live Room Code (Anchor's identity code)")
+            .define("roomCode", "");
+
     static final ForgeConfigSpec SPEC = BUILDER.build();
 
     public static String accessKey;
     public static String accessSecret;
     public static long appId;
+    public static String roomCode;
 
     @SubscribeEvent
     static void onLoad(final ModConfigEvent event) {
         accessKey = ACCESS_KEY.get();
         accessSecret = ACCESS_SECRET.get();
         appId = APP_ID.get();
+        roomCode = ROOM_CODE.get();
     }
 }

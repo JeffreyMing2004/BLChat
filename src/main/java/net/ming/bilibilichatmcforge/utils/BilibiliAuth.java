@@ -1,7 +1,7 @@
 package net.ming.bilibilichatmcforge.utils;
 
 import com.google.gson.Gson;
-import net.ming.bilibilichatmcforge.Config;
+import net.ming.bilibilichatmcforge.JsonConfigManager;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -16,8 +16,8 @@ public class BilibiliAuth {
     private static final Gson GSON = new Gson();
 
     public static Map<String, String> getHeaders(String body) {
-        String accessKey = Config.accessKey;
-        String accessSecret = Config.accessSecret;
+        String accessKey = JsonConfigManager.getInstance().accessKey;
+        String accessSecret = JsonConfigManager.getInstance().accessSecret;
 
         if (accessKey == null || accessKey.isEmpty() || accessSecret == null || accessSecret.isEmpty()) {
             return new HashMap<>();
