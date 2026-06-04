@@ -45,8 +45,10 @@ public class BilibiliClient {
         if (isRunning) return;
         isRunning = true;
 
-        if (Config.accessKey.isEmpty() || Config.accessSecret.isEmpty() || Config.appId == 0 || Config.roomCode.isEmpty()) {
+        JsonConfigManager.ConfigData config = JsonConfigManager.getInstance();
+        if (config.accessKey.isEmpty() || config.accessSecret.isEmpty() || config.appId == 0 || config.roomCode.isEmpty()) {
             LOGGER.error("Bilibili config is incomplete. Please check your config file.");
+            isRunning = false;
             return;
         }
 
@@ -55,10 +57,11 @@ public class BilibiliClient {
 
     private void connect() {
         try {
+            JsonConfigManager.ConfigData config = JsonConfigManager.getInstance();
             String url = "https://live-open.bilibili.com/v2/app/start";
             JsonObject body = new JsonObject();
-            body.addProperty("app_id", Config.appId);
-            body.addProperty("code", Config.roomCode);
+            body.addProperty("app_id", config.appId);
+            body.addProperty("code", config.roomCode);
             String bodyStr = GSON.toJson(body);
 
             Map<String, String> headers = BilibiliAuth.getHeaders(bodyStr);
