@@ -20,6 +20,11 @@ Thumbs.db
 # Log
 *.log
 
+#Vue
+h5-plugin/
+
+#Server
+
 #ide
 .idea/
 .gradle/
