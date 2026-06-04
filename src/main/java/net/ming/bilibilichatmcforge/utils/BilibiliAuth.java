@@ -69,8 +69,8 @@ public class BilibiliAuth {
 
     private static String hmacSha256(String secret, String message) {
         try {
-            Mac sha256_HMAC = Mac.getInstance("HMAC-SHA256");
-            SecretKeySpec secret_key = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HMAC-SHA256");
+            Mac sha256_HMAC = Mac.getInstance("HmacSHA256");
+            SecretKeySpec secret_key = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
             sha256_HMAC.init(secret_key);
             byte[] bytes = sha256_HMAC.doFinal(message.getBytes(StandardCharsets.UTF_8));
             StringBuilder hexString = new StringBuilder();

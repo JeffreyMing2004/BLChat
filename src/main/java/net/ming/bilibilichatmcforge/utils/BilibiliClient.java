@@ -16,6 +16,7 @@ import java.net.http.WebSocket;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -46,9 +47,16 @@ public class BilibiliClient {
         isRunning = true;
 
         JsonConfigManager.ConfigData config = JsonConfigManager.getInstance();
-        if (config.accessKey.isEmpty() || config.accessSecret.isEmpty() || config.appId == 0 || config.roomCode.isEmpty()) {
-            LOGGER.error("Bilibili config is incomplete. Please check your config file.");
-            server.execute(() -> server.getPlayerList().broadcastSystemMessage(Component.translatable("mod.bilibilichatmcforge.error.config_incomplete"), false));
+        List<String> missingFields = new ArrayList<>();
+        if (config.accessKey.isEmpty()) missingFields.add(Component.translatable("mod.bilibilichatmcforge.config.missing.access_key").getString());
+        if (config.accessSecret.isEmpty()) missingFields.add(Component.translatable("mod.bilibilichatmcforge.config.missing.access_secret").getString());
+        if (config.appId == 0) missingFields.add(Component.translatable("mod.bilibilichatmcforge.config.missing.app_id").getString());
+        if (config.roomCode.isEmpty()) missingFields.add(Component.translatable("mod.bilibilichatmcforge.config.missing.room_code").getString());
+
+        if (!missingFields.isEmpty()) {
+            String missing = String.join(", ", missingFields);
+            LOGGER.error("Bilibili config is incomplete. Missing: {}", missing);
+            server.execute(() -> server.getPlayerList().broadcastSystemMessage(Component.translatable("mod.bilibilichatmcforge.error.config_incomplete", missing), false));
             isRunning = false;
             return;
         }
