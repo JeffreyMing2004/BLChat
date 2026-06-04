@@ -48,6 +48,7 @@ public class BilibiliClient {
         JsonConfigManager.ConfigData config = JsonConfigManager.getInstance();
         if (config.accessKey.isEmpty() || config.accessSecret.isEmpty() || config.appId == 0 || config.roomCode.isEmpty()) {
             LOGGER.error("Bilibili config is incomplete. Please check your config file.");
+            server.execute(() -> server.getPlayerList().broadcastSystemMessage(Component.translatable("mod.bilibilichatmcforge.error.config_incomplete"), false));
             isRunning = false;
             return;
         }
@@ -75,7 +76,9 @@ public class BilibiliClient {
             JsonObject respJson = GSON.fromJson(response.body(), JsonObject.class);
 
             if (respJson.get("code").getAsInt() != 0) {
-                LOGGER.error("Failed to start Bilibili app: {}", respJson.get("message").getAsString());
+                String errorMsg = respJson.get("message").getAsString();
+                LOGGER.error("Failed to start Bilibili app: {}", errorMsg);
+                server.execute(() -> server.getPlayerList().broadcastSystemMessage(Component.translatable("mod.bilibilichatmcforge.error.app_start_failed", errorMsg), false));
                 isRunning = false;
                 return;
             }
@@ -98,6 +101,7 @@ public class BilibiliClient {
                     .thenAccept(ws -> {
                         this.webSocket = ws;
                         LOGGER.info("Connected to Bilibili WebSocket");
+                        server.execute(() -> server.getPlayerList().broadcastSystemMessage(Component.translatable("mod.bilibilichatmcforge.info.connected"), false));
                     });
 
         } catch (Exception e) {
@@ -220,37 +224,37 @@ public class BilibiliClient {
                         try {
                             JsonObject json = GSON.fromJson(jsonStr, JsonObject.class);
                             JsonObject msgData = json.getAsJsonObject("data");
-                            String chatMsg = null;
+                            Component finalChatMsg = null;
 
                             switch (json.get("cmd").getAsString()) {
                                 case "LIVE_OPEN_PLATFORM_DM":
                                     String uname = msgData.get("uname").getAsString();
                                     String msg = msgData.get("msg").getAsString();
-                                    chatMsg = String.format("[Bilibili 弹幕] %s: %s", uname, msg);
+                                    finalChatMsg = Component.translatable("mod.bilibilichatmcforge.chat.danmaku", uname, msg);
                                     break;
                                 case "LIVE_OPEN_PLATFORM_SEND_GIFT":
                                     String giftUname = msgData.get("uname").getAsString();
                                     String giftName = msgData.get("gift_name").getAsString();
                                     int giftNum = msgData.get("gift_num").getAsInt();
-                                    chatMsg = String.format("[Bilibili 礼物] %s 赠送了 %s x%d", giftUname, giftName, giftNum);
+                                    finalChatMsg = Component.translatable("mod.bilibilichatmcforge.chat.gift", giftUname, giftName, giftNum);
                                     break;
                                 case "LIVE_OPEN_PLATFORM_SUPER_CHAT":
                                     String scUname = msgData.get("uname").getAsString();
                                     String scMsg = msgData.get("message").getAsString();
                                     long rmb = msgData.get("rmb").getAsLong();
-                                    chatMsg = String.format("[Bilibili SC] %s (￥%d): %s", scUname, rmb, scMsg);
+                                    finalChatMsg = Component.translatable("mod.bilibilichatmcforge.chat.sc", scUname, rmb, scMsg);
                                     break;
                                 case "LIVE_OPEN_PLATFORM_GUARD":
                                     String guardUname = msgData.getAsJsonObject("user_info").get("uname").getAsString();
                                     String guardName = msgData.get("guard_level").getAsInt() == 1 ? "总督" : 
                                                       msgData.get("guard_level").getAsInt() == 2 ? "提督" : "舰长";
-                                    chatMsg = String.format("[Bilibili 大航海] 欢迎 %s 成为 %s", guardUname, guardName);
+                                    finalChatMsg = Component.translatable("mod.bilibilichatmcforge.chat.guard", guardUname, guardName);
                                     break;
                             }
 
-                            if (chatMsg != null) {
-                                String finalChatMsg = chatMsg;
-                                server.execute(() -> server.getPlayerList().broadcastSystemMessage(Component.literal(finalChatMsg), false));
+                            if (finalChatMsg != null) {
+                                Component chatComponent = finalChatMsg;
+                                server.execute(() -> server.getPlayerList().broadcastSystemMessage(chatComponent, false));
                             }
                         } catch (Exception e) {
                             // Ignore non-json or other errors

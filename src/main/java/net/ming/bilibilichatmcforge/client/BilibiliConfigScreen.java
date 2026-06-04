@@ -16,7 +16,7 @@ public class BilibiliConfigScreen extends Screen {
     private EditBox roomCodeField;
 
     public BilibiliConfigScreen(Screen lastScreen) {
-        super(Component.literal("Bilibili Chat Mod Configuration"));
+        super(Component.translatable("mod.bilibilichatmcforge.config.title"));
         this.lastScreen = lastScreen;
     }
 
@@ -24,37 +24,37 @@ public class BilibiliConfigScreen extends Screen {
     protected void init() {
         JsonConfigManager.ConfigData config = JsonConfigManager.getInstance();
 
-        int fieldWidth = 200;
-        int fieldHeight = 20;
-        int spacing = 30;
-        int startY = this.height / 2 - 80;
+        int fieldWidth = 260;
+        int fieldHeight = 24;
+        int spacing = 50;
+        int startY = this.height / 2 - 120;
 
         // Access Key
-        this.accessKeyField = new EditBox(this.font, this.width / 2 - fieldWidth / 2, startY, fieldWidth, fieldHeight, Component.literal("Access Key"));
+        this.accessKeyField = new EditBox(this.font, this.width / 2 - fieldWidth / 2, startY, fieldWidth, fieldHeight, Component.translatable("mod.bilibilichatmcforge.config.access_key"));
         this.accessKeyField.setValue(config.accessKey);
-        this.accessKeyField.setMaxLength(128);
+        this.accessKeyField.setMaxLength(256);
         this.addRenderableWidget(this.accessKeyField);
 
         // Access Secret
-        this.accessSecretField = new EditBox(this.font, this.width / 2 - fieldWidth / 2, startY + spacing, fieldWidth, fieldHeight, Component.literal("Access Secret"));
+        this.accessSecretField = new EditBox(this.font, this.width / 2 - fieldWidth / 2, startY + spacing, fieldWidth, fieldHeight, Component.translatable("mod.bilibilichatmcforge.config.access_secret"));
         this.accessSecretField.setValue(config.accessSecret);
-        this.accessSecretField.setMaxLength(128);
+        this.accessSecretField.setMaxLength(256);
         this.addRenderableWidget(this.accessSecretField);
 
         // App ID
-        this.appIdField = new EditBox(this.font, this.width / 2 - fieldWidth / 2, startY + spacing * 2, fieldWidth, fieldHeight, Component.literal("App ID"));
+        this.appIdField = new EditBox(this.font, this.width / 2 - fieldWidth / 2, startY + spacing * 2, fieldWidth, fieldHeight, Component.translatable("mod.bilibilichatmcforge.config.app_id"));
         this.appIdField.setValue(String.valueOf(config.appId));
         this.appIdField.setMaxLength(20);
         this.addRenderableWidget(this.appIdField);
 
         // Room Code
-        this.roomCodeField = new EditBox(this.font, this.width / 2 - fieldWidth / 2, startY + spacing * 3, fieldWidth, fieldHeight, Component.literal("Room Code"));
+        this.roomCodeField = new EditBox(this.font, this.width / 2 - fieldWidth / 2, startY + spacing * 3, fieldWidth, fieldHeight, Component.translatable("mod.bilibilichatmcforge.config.room_code"));
         this.roomCodeField.setValue(config.roomCode);
         this.roomCodeField.setMaxLength(64);
         this.addRenderableWidget(this.roomCodeField);
 
         // Save Button
-        this.addRenderableWidget(Button.builder(Component.literal("Save & Apply"), (button) -> {
+        this.addRenderableWidget(Button.builder(Component.translatable("mod.bilibilichatmcforge.config.save"), (button) -> {
             config.accessKey = this.accessKeyField.getValue();
             config.accessSecret = this.accessSecretField.getValue();
             try {
@@ -70,23 +70,25 @@ public class BilibiliConfigScreen extends Screen {
             Bilibilichatmcforge.restartClient();
             
             this.minecraft.setScreen(this.lastScreen);
-        }).bounds(this.width / 2 - 105, startY + spacing * 4 + 10, 100, 20).build());
+        }).bounds(this.width / 2 - 105, startY + spacing * 4, 100, 20).build());
 
         // Cancel Button
-        this.addRenderableWidget(Button.builder(Component.literal("Cancel"), (button) -> {
+        this.addRenderableWidget(Button.builder(Component.translatable("mod.bilibilichatmcforge.config.cancel"), (button) -> {
             this.minecraft.setScreen(this.lastScreen);
-        }).bounds(this.width / 2 + 5, startY + spacing * 4 + 10, 100, 20).build());
+        }).bounds(this.width / 2 + 5, startY + spacing * 4, 100, 20).build());
     }
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(guiGraphics);
-        guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, 20, 0xFFFFFF);
+        guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, 8, 0xFFFFFF);
         
-        guiGraphics.drawString(this.font, "Access Key:", this.width / 2 - 100, this.accessKeyField.getY() - 12, 0xA0A0A0);
-        guiGraphics.drawString(this.font, "Access Secret:", this.width / 2 - 100, this.accessSecretField.getY() - 12, 0xA0A0A0);
-        guiGraphics.drawString(this.font, "App ID:", this.width / 2 - 100, this.appIdField.getY() - 12, 0xA0A0A0);
-        guiGraphics.drawString(this.font, "Room Code (Identity Code):", this.width / 2 - 100, this.roomCodeField.getY() - 12, 0xA0A0A0);
+        int labelX = this.width / 2 - 130;
+        int labelOffset = 14;
+        guiGraphics.drawString(this.font, Component.translatable("mod.bilibilichatmcforge.config.access_key"), labelX, this.accessKeyField.getY() - labelOffset, 0xA0A0A0);
+        guiGraphics.drawString(this.font, Component.translatable("mod.bilibilichatmcforge.config.access_secret"), labelX, this.accessSecretField.getY() - labelOffset, 0xA0A0A0);
+        guiGraphics.drawString(this.font, Component.translatable("mod.bilibilichatmcforge.config.app_id"), labelX, this.appIdField.getY() - labelOffset, 0xA0A0A0);
+        guiGraphics.drawString(this.font, Component.translatable("mod.bilibilichatmcforge.config.room_code"), labelX, this.roomCodeField.getY() - labelOffset, 0xA0A0A0);
         
         super.render(guiGraphics, mouseX, mouseY, partialTick);
     }

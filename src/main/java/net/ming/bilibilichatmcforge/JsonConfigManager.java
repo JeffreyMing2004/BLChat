@@ -81,4 +81,12 @@ public class JsonConfigManager {
         getInstance().roomCode = roomCode;
         save();
     }
+
+    public static void setAuth(String accessKey, String accessSecret, long appId) {
+        ConfigData data = getInstance();
+        data.accessKey = accessKey;
+        data.accessSecret = accessSecret;
+        data.appId = appId;
+        save();
+    }
 }

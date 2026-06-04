@@ -1,0 +1,18 @@
+{
+  "mod.bilibilichatmcforge.config.title": "哔哩哔哩弹幕助手配置",
+  "mod.bilibilichatmcforge.config.access_key": "Access Key (访问密钥)",
+  "mod.bilibilichatmcforge.config.access_secret": "Access Secret (安全密钥)",
+  "mod.bilibilichatmcforge.config.app_id": "项目 ID (App ID)",
+  "mod.bilibilichatmcforge.config.room_code": "身份码 (主播身份码)",
+  "mod.bilibilichatmcforge.config.save": "保存并应用",
+  "mod.bilibilichatmcforge.config.cancel": "取消",
+  "mod.bilibilichatmcforge.chat.restarting": "正在重启哔哩哔哩客户端...",
+  "mod.bilibilichatmcforge.chat.room_code_updated": "哔哩哔哩身份码已更新为: %s",
+  "mod.bilibilichatmcforge.chat.danmaku": "[B站 弹幕] %s: %s",
+  "mod.bilibilichatmcforge.chat.gift": "[B站 礼物] %s 赠送了 %s x%d",
+  "mod.bilibilichatmcforge.chat.sc": "[B站 SC] %s (￥%d): %s",
+  "mod.bilibilichatmcforge.chat.guard": "[B站 大航海] 欢迎 %s 成为 %s",
+  "mod.bilibilichatmcforge.error.config_incomplete": "哔哩哔哩配置不完整，请在模组配置菜单中检查。",
+  "mod.bilibilichatmcforge.error.app_start_failed": "开启 B站项目失败: %s",
+  "mod.bilibilichatmcforge.info.connected": "已成功连接到哔哩哔哩直播间"
+}

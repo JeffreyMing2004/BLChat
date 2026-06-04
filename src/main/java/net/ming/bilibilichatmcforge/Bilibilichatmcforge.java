@@ -107,10 +107,10 @@ public class Bilibilichatmcforge {
                                 .executes(context -> {
                                     String code = com.mojang.brigadier.arguments.StringArgumentType.getString(context, "code");
                                     JsonConfigManager.setRoomCode(code);
-                                    context.getSource().sendSuccess(() -> net.minecraft.network.chat.Component.literal("Bilibili Room Code updated to: " + code), true);
+                                    context.getSource().sendSuccess(() -> net.minecraft.network.chat.Component.translatable("mod.bilibilichatmcforge.chat.room_code_updated", code), true);
                                     
                                     if (bilibiliClient != null) {
-                                        context.getSource().sendSuccess(() -> net.minecraft.network.chat.Component.literal("Restarting Bilibili Client..."), true);
+                                        context.getSource().sendSuccess(() -> net.minecraft.network.chat.Component.translatable("mod.bilibilichatmcforge.chat.restarting"), true);
                                         bilibiliClient.stop();
                                         bilibiliClient.start();
                                     }

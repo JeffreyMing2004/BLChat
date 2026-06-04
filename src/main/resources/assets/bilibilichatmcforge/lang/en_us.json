@@ -1,0 +1,18 @@
+{
+  "mod.bilibilichatmcforge.config.title": "Bilibili Chat Mod Configuration",
+  "mod.bilibilichatmcforge.config.access_key": "Access Key",
+  "mod.bilibilichatmcforge.config.access_secret": "Access Secret",
+  "mod.bilibilichatmcforge.config.app_id": "App ID",
+  "mod.bilibilichatmcforge.config.room_code": "Room Code (Identity Code)",
+  "mod.bilibilichatmcforge.config.save": "Save & Apply",
+  "mod.bilibilichatmcforge.config.cancel": "Cancel",
+  "mod.bilibilichatmcforge.chat.restarting": "Restarting Bilibili Client...",
+  "mod.bilibilichatmcforge.chat.room_code_updated": "Bilibili Room Code updated to: %s",
+  "mod.bilibilichatmcforge.chat.danmaku": "[Bilibili DM] %s: %s",
+  "mod.bilibilichatmcforge.chat.gift": "[Bilibili Gift] %s sent %s x%d",
+  "mod.bilibilichatmcforge.chat.sc": "[Bilibili SC] %s (￥%d): %s",
+  "mod.bilibilichatmcforge.chat.guard": "[Bilibili Guard] Welcome %s as %s",
+  "mod.bilibilichatmcforge.error.config_incomplete": "Bilibili config is incomplete. Please check your config menu.",
+  "mod.bilibilichatmcforge.error.app_start_failed": "Failed to start Bilibili app: %s",
+  "mod.bilibilichatmcforge.info.connected": "Connected to Bilibili WebSocket"
+}

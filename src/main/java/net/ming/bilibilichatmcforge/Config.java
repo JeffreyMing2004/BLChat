@@ -44,9 +44,7 @@ public class Config {
 
     @SubscribeEvent
     static void onLoad(final ModConfigEvent event) {
-        accessKey = ACCESS_KEY.get();
-        accessSecret = ACCESS_SECRET.get();
-        appId = APP_ID.get();
-        roomCode = ROOM_CODE.get();
+        JsonConfigManager.setAuth(ACCESS_KEY.get(), ACCESS_SECRET.get(), APP_ID.get());
+        JsonConfigManager.setRoomCode(ROOM_CODE.get());
     }
 }
