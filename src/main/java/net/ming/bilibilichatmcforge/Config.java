@@ -21,11 +21,11 @@ public class Config {
 
     private static final ForgeConfigSpec.ConfigValue<String> ACCESS_KEY = BUILDER
             .comment("Bilibili Open Live Access Key")
-            .define("accessKey", "bq96FKKv15yroVpW1K77HRlZ");
+            .define("accessKey", "");
 
     private static final ForgeConfigSpec.ConfigValue<String> ACCESS_SECRET = BUILDER
             .comment("Bilibili Open Live Access Secret")
-            .define("accessSecret", "y5irBHscUC37KT5rq9SL0MhgKkDKks");
+            .define("accessSecret", "");
 
     private static final ForgeConfigSpec.LongValue APP_ID = BUILDER
             .comment("Bilibili Open Live App ID")

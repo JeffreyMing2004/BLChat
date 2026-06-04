@@ -22,6 +22,8 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
+import net.minecraftforge.client.ConfigScreenHandler;
+import net.ming.bilibilichatmcforge.client.BilibiliConfigScreen;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -41,6 +43,13 @@ public class Bilibilichatmcforge {
     private static final Logger LOGGER = LogUtils.getLogger();
     
     private static BilibiliClient bilibiliClient;
+    
+    public static void restartClient() {
+        if (bilibiliClient != null) {
+            bilibiliClient.stop();
+            bilibiliClient.start();
+        }
+    }
     public static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, MODID);
     // Create a Deferred Register to hold Items which will all be registered under the "bilibilichatmcforge" namespace
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, MODID);
@@ -61,6 +70,7 @@ public class Bilibilichatmcforge {
     }).build());
 
     public Bilibilichatmcforge() {
+        JsonConfigManager.load();
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
 
         // Register the commonSetup method for modloading
@@ -75,19 +85,44 @@ public class Bilibilichatmcforge {
 
         // Register ourselves for server and other game events we are interested in
         MinecraftForge.EVENT_BUS.register(this);
+        MinecraftForge.EVENT_BUS.addListener(this::onRegisterCommands);
 
         // Register the item to a creative tab
         modEventBus.addListener(this::addCreative);
 
         // Register our mod's ForgeConfigSpec so that Forge can create and load the config file for us
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, Config.SPEC);
+        
+        // Register Config Screen
+        ModLoadingContext.get().registerExtensionPoint(ConfigScreenHandler.ConfigScreenFactory.class, 
+            () -> new ConfigScreenHandler.ConfigScreenFactory((mc, lastScreen) -> new BilibiliConfigScreen(lastScreen)));
+    }
+
+    private void onRegisterCommands(net.minecraftforge.event.RegisterCommandsEvent event) {
+        com.mojang.brigadier.CommandDispatcher<net.minecraft.commands.CommandSourceStack> dispatcher = event.getDispatcher();
+        dispatcher.register(net.minecraft.commands.Commands.literal("bilibili")
+                .requires(source -> source.hasPermission(2))
+                .then(net.minecraft.commands.Commands.literal("roomcode")
+                        .then(net.minecraft.commands.Commands.argument("code", com.mojang.brigadier.arguments.StringArgumentType.string())
+                                .executes(context -> {
+                                    String code = com.mojang.brigadier.arguments.StringArgumentType.getString(context, "code");
+                                    JsonConfigManager.setRoomCode(code);
+                                    context.getSource().sendSuccess(() -> net.minecraft.network.chat.Component.literal("Bilibili Room Code updated to: " + code), true);
+                                    
+                                    if (bilibiliClient != null) {
+                                        context.getSource().sendSuccess(() -> net.minecraft.network.chat.Component.literal("Restarting Bilibili Client..."), true);
+                                        bilibiliClient.stop();
+                                        bilibiliClient.start();
+                                    }
+                                    return 1;
+                                }))));
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
         // Some common setup code
         LOGGER.info("HELLO FROM COMMON SETUP");
 
-        if (Config.accessKey != null && !Config.accessKey.isEmpty()) {
+        if (JsonConfigManager.getInstance().accessKey != null && !JsonConfigManager.getInstance().accessKey.isEmpty()) {
             LOGGER.info("Bilibili Access Key loaded");
         }
     }

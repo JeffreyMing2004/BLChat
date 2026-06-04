@@ -115,11 +115,12 @@ public class BilibiliClient {
         }
 
         if (gameId != null) {
+            JsonConfigManager.ConfigData config = JsonConfigManager.getInstance();
             CompletableFuture.runAsync(() -> {
                 try {
                     String url = "https://live-open.bilibili.com/v2/app/end";
                     JsonObject body = new JsonObject();
-                    body.addProperty("app_id", Config.appId);
+                    body.addProperty("app_id", config.appId);
                     body.addProperty("game_id", gameId);
                     String bodyStr = GSON.toJson(body);
 

@@ -2,6 +2,7 @@ package net.ming.bilibilichatmcforge;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import net.minecraftforge.fml.loading.FMLLoader;
 import net.minecraftforge.fml.loading.FMLPaths;
 import org.slf4j.Logger;
 import com.mojang.logging.LogUtils;
@@ -10,6 +11,8 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.file.Path;
 
 public class JsonConfigManager {
@@ -37,6 +40,24 @@ public class JsonConfigManager {
             }
         } else {
             instance = new ConfigData();
+            // Try loading dev defaults if not in production
+            if (!FMLLoader.isProduction()) {
+                try (InputStream is = JsonConfigManager.class.getResourceAsStream("/dev_config.json")) {
+                    if (is != null) {
+                        try (InputStreamReader reader = new InputStreamReader(is)) {
+                            ConfigData devData = GSON.fromJson(reader, ConfigData.class);
+                            if (devData != null) {
+                                instance.accessKey = devData.accessKey;
+                                instance.accessSecret = devData.accessSecret;
+                                instance.appId = devData.appId;
+                                LOGGER.info("Loaded development authentication defaults from dev_config.json");
+                            }
+                        }
+                    }
+                } catch (IOException e) {
+                    LOGGER.warn("Failed to load dev_config.json: {}", e.getMessage());
+                }
+            }
             save();
         }
     }
