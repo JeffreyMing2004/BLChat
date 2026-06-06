@@ -51,7 +51,7 @@ public class JsonConfigManager {
         return instance;
     }
 
-    public static void setRoomId(String roomCode) {
+    public static void setRoomCode(String roomCode) {
         getInstance().roomCode = roomCode;
         save();
     }

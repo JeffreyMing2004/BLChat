@@ -3,6 +3,12 @@
 build/
 !gradle/wrapper/gradle-wrapper.jar
 
+# proguard
+proguard-7.4.2/
+proguard-rules.pro
+proguard.pro
+proguard.zip
+
 # IDE
 .idea
 *.iml
