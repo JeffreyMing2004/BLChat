@@ -1,0 +1,16 @@
+{
+  "mod.bilibilichatmcforge.config.title": "Bilibili Chat Mod Configuration",
+  "mod.bilibilichatmcforge.config.room_code": "Room Code",
+  "mod.bilibilichatmcforge.config.room_code.hint": "Enter Bilibili Live Room Code",
+  "mod.bilibilichatmcforge.config.save": "Save & Apply",
+  "mod.bilibilichatmcforge.config.cancel": "Cancel",
+  "mod.bilibilichatmcforge.chat.restarting": "Reconnecting to Bilibili live room...",
+  "mod.bilibilichatmcforge.chat.room_code_updated": "Room code updated: %s",
+  "mod.bilibilichatmcforge.chat.danmaku": "[Bilibili DM] %s: %s",
+  "mod.bilibilichatmcforge.chat.gift": "[Bilibili Gift] %s sent %s x%d",
+  "mod.bilibilichatmcforge.chat.sc": "[Bilibili SC] %s (￥%d): %s",
+  "mod.bilibilichatmcforge.chat.guard": "[Bilibili Guard] %s subscribed %s",
+  "mod.bilibilichatmcforge.error.room_code_missing": "Room code not configured. Please set it in config file or Mod settings.",
+  "mod.bilibilichatmcforge.error.connect_failed": "Failed to connect to live room: %s",
+  "mod.bilibilichatmcforge.info.connected": "Connected to Bilibili live room"
+}
