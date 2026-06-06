@@ -9,6 +9,9 @@ proguard-rules.pro
 proguard.pro
 proguard.zip
 
+#doc
+1.20.1/
+
 # IDE
 .idea
 *.iml
