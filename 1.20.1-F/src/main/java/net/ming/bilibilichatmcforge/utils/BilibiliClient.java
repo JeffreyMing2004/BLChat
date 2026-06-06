@@ -208,7 +208,7 @@ public class BilibiliClient {
                 case "DANMU_MSG": {
                     JsonArray info = json.getAsJsonArray("info");
                     String msg = info.get(1).getAsString();
-                    JsonArray userInfo = info.getAsJsonArray("2");
+                    JsonArray userInfo = info.get(2).getAsJsonArray();
                     String uname = userInfo.get(1).getAsString();
                     return Component.translatable("mod.bilibilichatmcforge.chat.danmaku", uname, msg);
                 }
