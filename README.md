@@ -60,23 +60,6 @@ bilibiliChat-MC-Forge/
 │       ├── utils/                # B 站认证与连接工具
 │       ├── Bililichatmcforge.java  # 模组主类
 │       └── Config.java           # 配置管理
-├── h5-plugin/                    # H5 管理插件
-│   ├── client/                   # 前端（Vue 3 + Vite）
-│   │   └── src/
-│   │       ├── App.vue           # 主页面（登录 + 管理面板）
-│   │       ├── DanmuView.vue     # OBS 弹幕覆盖层组件
-│   │       └── api.js            # API 请求封装
-│   ├── server/                   # 后端（Node.js + Express）
-│   │   └── src/
-│   │       ├── index.js          # 服务入口
-│   │       ├── auth.js           # 登录与主播信息接口
-│   │       ├── bilibiliApi.js    # B 站开放平台 API 封装
-│   │       ├── bilibiliAuth.js   # B 站请求签名
-│   │       ├── danmuWs.js        # 弹幕 WebSocket 桥接
-│   │       ├── codeMap.js        # 识别码 ↔ 身份码映射（SQLite）
-│   │       ├── config.js         # 环境变量读取
-│   │       └── token.js          # JWT 签发与验证
-│   └── start.bat                 # Windows 一键启动脚本
 ├── build.gradle                  # Forge 构建配置
 └── gradle.properties             # 模组版本与元数据
 ```
