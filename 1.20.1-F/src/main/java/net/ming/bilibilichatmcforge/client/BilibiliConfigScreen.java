@@ -10,7 +10,7 @@ import net.minecraft.network.chat.Component;
 
 public class BilibiliConfigScreen extends Screen {
     private final Screen lastScreen;
-    private EditBox roomCodeField;
+    private EditBox identityCodeField;
 
     public BilibiliConfigScreen(Screen lastScreen) {
         super(Component.translatable("mod.bilibilichatmcforge.config.title"));
@@ -25,16 +25,16 @@ public class BilibiliConfigScreen extends Screen {
         int fieldWidth = 260;
         int fieldX = centerX - fieldWidth / 2;
 
-        // Room Code field
-        this.roomCodeField = new EditBox(this.font, fieldX, 60, fieldWidth, 20, Component.empty());
-        this.roomCodeField.setValue(config.roomCode);
-        this.roomCodeField.setMaxLength(32);
-        this.roomCodeField.setHint(Component.translatable("mod.bilibilichatmcforge.config.room_code.hint"));
-        this.addRenderableWidget(this.roomCodeField);
+        // Identity Code field
+        this.identityCodeField = new EditBox(this.font, fieldX, 60, fieldWidth, 20, Component.empty());
+        this.identityCodeField.setValue(config.identityCode);
+        this.identityCodeField.setMaxLength(32);
+        this.identityCodeField.setHint(Component.translatable("mod.bilibilichatmcforge.config.identity_code.hint"));
+        this.addRenderableWidget(this.identityCodeField);
 
         // Save Button
         this.addRenderableWidget(Button.builder(Component.translatable("mod.bilibilichatmcforge.config.save"), (button) -> {
-            JsonConfigManager.setRoomCode(this.roomCodeField.getValue());
+            JsonConfigManager.setIdentityCode(this.identityCodeField.getValue());
             Bilibilichatmcforge.restartClient();
             this.minecraft.setScreen(this.lastScreen);
         }).bounds(centerX - 105, this.height - 27, 100, 20).build());
@@ -49,7 +49,7 @@ public class BilibiliConfigScreen extends Screen {
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(guiGraphics);
         guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, 10, 0xFFFFFF);
-        guiGraphics.drawString(this.font, Component.translatable("mod.bilibilichatmcforge.config.room_code"), this.width / 2 - 130, 48, 0xA0A0A0);
+        guiGraphics.drawString(this.font, Component.translatable("mod.bilibilichatmcforge.config.identity_code"), this.width / 2 - 130, 48, 0xA0A0A0);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
     }
 

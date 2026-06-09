@@ -42,12 +42,12 @@ public class Bilibilichatmcforge {
         event.getDispatcher().register(
                 net.minecraft.commands.Commands.literal("bilibili")
                         .requires(source -> source.hasPermission(2))
-                        .then(net.minecraft.commands.Commands.literal("roomcode")
+                        .then(net.minecraft.commands.Commands.literal("identitycode")
                                 .then(net.minecraft.commands.Commands.argument("id", com.mojang.brigadier.arguments.StringArgumentType.string())
                                         .executes(context -> {
                                             String id = com.mojang.brigadier.arguments.StringArgumentType.getString(context, "id");
-                                            JsonConfigManager.setRoomCode(id);
-                                            context.getSource().sendSuccess(() -> net.minecraft.network.chat.Component.translatable("mod.bilibilichatmcforge.chat.room_code_updated", id), true);
+                                            JsonConfigManager.setIdentityCode(id);
+                                            context.getSource().sendSuccess(() -> net.minecraft.network.chat.Component.translatable("mod.bilibilichatmcforge.chat.identity_code_updated", id), true);
                                             if (bilibiliClient != null) {
                                                 context.getSource().sendSuccess(() -> net.minecraft.network.chat.Component.translatable("mod.bilibilichatmcforge.chat.restarting"), true);
                                                 bilibiliClient.stop();

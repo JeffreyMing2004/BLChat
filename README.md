@@ -1,4 +1,4 @@
-# BilibiliChat-MC-Forge
+# BLChat
 
 <div align="center">
 
@@ -10,80 +10,72 @@
 
 在 Minecraft 游戏内实时查看 B 站直播弹幕 · 提供 Web 管理面板与 OBS 弹幕覆盖层
 
+View Bilibili live danmaku in Minecraft · Web management panel & OBS danmaku overlay
+
 </div>
 
 ---
 
-## 项目简介
+## 项目简介 / Overview
 
-BilibiliChat-MC-Forge 是一个完整的 B 站直播弹幕 Minecraft 集成方案，包含两个核心组件：
+BLChat 是一个完整的 B 站直播弹幕 Minecraft 集成方案，包含三个核心组件：
 
-| 组件 | 说明 |
+BLChat is a complete Bilibili live danmaku integration for Minecraft, consisting of three core components:
+
+| 组件 / Component | 说明 / Description |
 |------|------|
-| **MC Forge Mod** | Minecraft 模组，将 B 站弹幕实时显示在游戏聊天栏 |
-| **H5 管理插件** | Web 端管理面板 + OBS 透明弹幕覆盖层 |
+| **MC Forge Mod** | Minecraft 模组，将 B 站弹幕实时显示在游戏聊天栏 / Displays Bilibili danmaku in Minecraft chat |
+| **H5 管理面板** | Web 端管理面板，主播身份验证与 OBS 弹幕地址获取 / Web panel for streamer authentication & OBS overlay URL |
+| **OBS 弹幕覆盖层** | 透明弹幕页面，适配 OBS 浏览器源 / Transparent danmaku page for OBS browser source |
 
-两者通过「哔哩哔哩直播开放平台」API 连接同一个直播间弹幕源。
+## 功能特性 / Features
 
-## 功能特性
+### MC 模组 / MC Mod
 
-### MC 模组
+- 游戏聊天栏实时显示弹幕消息 / Real-time danmaku display in game chat
+- 礼物赠送、Super Chat、大航海开通事件同步 / Gift, Super Chat, and Guard notifications
+- 游戏内 Mod 配置界面 / In-game configuration screen
+- 管理员指令 `/bilibili identitycode <code>` 快速切换身份码 / Admin command to switch identity code
+- 断线自动重连 / Auto-reconnect on disconnect
 
-- 游戏聊天栏实时显示弹幕消息
-- 礼物赠送、Super Chat、大航海开通事件同步
-- 游戏内 Mod 配置界面，填写开放平台参数
-- 管理员指令 `/bililive roomcode <code>` 快速切换身份码
+### H5 管理面板 / H5 Panel
 
-### H5 管理面板
+- 主播身份码验证，获取主播昵称、头像、房间号 / Streamer identity code verification
+- 识别码机制：对外展示使用随机识别码，不暴露主播身份码 / Random display code to protect streamer identity
+- 识别码持久化存储（SQLite）/ Persistent storage with SQLite
+- MC 模组版本检测 / MC mod version detection
 
-- 主播身份码验证，获取主播昵称、头像、房间号
-- 头像通过后端代理获取，绕过 B 站防盗链
-- 识别码机制：对外展示使用随机识别码，不暴露主播身份码
-- 识别码持久化存储（SQLite），重启不丢失
-- 实时弹幕预览（弹幕、礼物、SC、大航海，颜色区分）
-- MC 模组版本检测，自动获取 GitHub Releases 最新版本
+### OBS 弹幕覆盖层 / OBS Overlay
 
-### OBS 弹幕覆盖层
+- 独立透明页面 `/danmu/{识别码}` / Standalone transparent page at `/danmu/{displayCode}`
+- 无需登录即可访问 / No login required
+- 断线自动重连 / Auto-reconnect
+- 文字阴影适配各种直播背景 / Text shadow for various backgrounds
 
-- 独立透明页面 `/danmu/{识别码}`，适配 OBS 浏览器源
-- 无需登录即可访问，直接添加到 OBS
-- 断线自动重连
-- 文字阴影适配各种直播背景
+## 快速开始 / Quick Start
 
-## 项目结构
-
-```
-bilibiliChat-MC-Forge/
-├── src/                          # MC Forge Mod 源码
-│   └── main/java/net/ming/bilibilichatmcforge/
-│       ├── client/               # 客户端配置界面
-│       ├── utils/                # B 站认证与连接工具
-│       ├── Bililichatmcforge.java  # 模组主类
-│       └── Config.java           # 配置管理
-├── build.gradle                  # Forge 构建配置
-└── gradle.properties             # 模组版本与元数据
-```
-
-## 快速开始
-
-### 前置条件
+### 前置条件 / Prerequisites
 
 - **MC 模组**：Java 17、Minecraft 1.20.1 + Forge 47.4.20
 - **H5 插件**：Node.js 18+
 - **B 站开放平台**：已申请并获得 Access Key、Access Secret、App ID
 
-申请地址：[哔哩哔哩直播开放平台](https://open-live.bilibili.com/)
+MC Mod: Java 17, Minecraft 1.20.1 + Forge 47.4.20  
+H5 Plugin: Node.js 18+  
+Bilibili Open Platform: Access Key, Access Secret, App ID required
 
-### 一、部署 H5 管理插件
+申请地址 / Apply at: [哔哩哔哩直播开放平台](https://open-live.bilibili.com/)
 
-#### 1. 配置环境变量
+### 一、部署 H5 管理面板 / Deploy H5 Panel
+
+#### 1. 配置环境变量 / Configure Environment
 
 ```bash
 cd h5-plugin/server
 cp .env.example .env
 ```
 
-编辑 `.env` 文件，填入以下内容：
+编辑 `.env` 文件 / Edit `.env`:
 
 ```env
 BILIBILI_ACCESS_KEY=你的AccessKey
@@ -94,157 +86,148 @@ PORT=3000
 CLIENT_ORIGIN=https://your-domain.com
 ```
 
-#### 2. 安装依赖
+#### 2. 安装依赖 / Install Dependencies
 
 ```bash
-# 后端
+# 后端 / Backend
 cd h5-plugin/server
 npm install
 
-# 前端
+# 前端 / Frontend
 cd ../client
 npm install
 ```
 
-#### 3. 本地开发
+#### 3. 本地开发 / Local Development
 
-Windows 用户可直接双击 `h5-plugin/start.bat` 一键启动前后端。
+Windows 用户可直接双击 `h5-plugin/start.bat` 一键启动。
 
-手动启动：
+Windows users can double-click `h5-plugin/start.bat` to start.
+
+手动启动 / Manual start:
 
 ```bash
-# 终端 1：启动后端
+# 终端 1 / Terminal 1: 后端 / Backend
 cd h5-plugin/server
 npm run dev
 
-# 终端 2：启动前端
+# 终端 2 / Terminal 2: 前端 / Frontend
 cd h5-plugin/client
 npm run dev
 ```
 
-前端开发服务器默认运行在 `http://localhost:5174`，API 请求自动代理到后端 `http://localhost:3000`。
-
-#### 4. 生产部署
+#### 4. 生产部署 / Production
 
 ```bash
-# 构建前端
+# 构建前端 / Build frontend
 cd h5-plugin/client
 npm run build
 
-# 启动后端（自动托管前端静态文件）
+# 启动后端 / Start backend
 cd ../server
 npm start
 ```
 
-生产环境只有一个服务运行在 `PORT`（默认 3000），同时提供 API 和前端页面。
+### 二、安装 MC 模组 / Install MC Mod
 
-### 二、安装 MC 模组
+1. 安装 Minecraft Forge 1.20.1 / Install Minecraft Forge 1.20.1
+2. 从 [GitHub Releases](https://github.com/JeffreyMing2004/BilibiliChat-MC-Forge/releases) 下载最新 `.jar`
+3. 将 `.jar` 放入 `mods/` 目录 / Put `.jar` into `mods/` directory
+4. 启动游戏 / Launch game
 
-1. 安装 Minecraft Forge 1.20.1
-2. 从 [GitHub Releases](https://github.com/JeffreyMing2004/BilibiliChat-MC-Forge/releases) 下载最新 `.jar` 文件
-3. 将 `.jar` 放入 Minecraft 的 `mods/` 目录
-4. 启动游戏
+### 三、配置 MC 模组 / Configure MC Mod
 
-### 三、配置 MC 模组
+**游戏内配置 / In-game:**
+Mods 列表 → BLChat → 配置 / Mods list → BLChat → Config
 
-**方式一：游戏内配置**
+**配置文件 / Config file:**
+`config/bilibilichat-config.json`
 
-进入 Mods 列表 → 找到 BilibiliChat → 打开配置界面，填写：
-- B 站开放平台 Access Key / Secret / App ID
-- H5 插件服务地址（如 `https://your-domain.com`）
-- 主播身份码（roomCode）
-
-**方式二：编辑配置文件**
-
-编辑 Minecraft 实例目录下的 `config/bilibilichat-config.json`。
-
-**方式三：管理员指令**
-
-在游戏内聊天栏输入（需 OP 权限）：
-
-```
-/bililive roomcode <你的身份码>
-```
-
-## 使用流程
-
-```
-主播在 B 站开播 → 获取身份码 → 在 H5 面板验证 → 获取 OBS 弹幕地址
-                                         ↓
-                              MC 模组自动连接弹幕 → 游戏内显示弹幕
-```
-
-1. 主播在 B 站开播，从[开播页面](https://link.bilibili.com/p/center/index#/my-room/start-live)获取身份码
-2. 在 H5 管理面板（`https://your-domain.com`）输入身份码完成验证
-3. 验证成功后获得：
-   - **OBS 弹幕地址**：`https://your-domain.com/danmu/{识别码}`，添加到 OBS 浏览器源
-   - **MC 模组下载**：获取最新版本模组
-4. 在 MC 模组配置中填入服务地址和身份码，游戏内即可显示弹幕
-
-## API 接口
-
-| 接口 | 方法 | 说明 |
-|------|------|------|
-| `/api/login` | POST | 身份码验证，返回 JWT + 识别码 + 主播信息 |
-| `/api/me` | GET | 查询当前登录状态 |
-| `/api/room-info` | GET | 获取主播信息（需 JWT） |
-| `/api/avatar` | GET | 头像代理（绕过 B 站防盗链） |
-| `/api/mod/latest` | GET | 获取 GitHub Releases 最新版本 |
-| `/api/health` | GET | 健康检查 |
-| `/ws/danmu/{识别码}` | WS | 公开弹幕 WebSocket（无需认证） |
-| `/danmu/ws?token=` | WS | 管理弹幕 WebSocket（需 JWT） |
-
-## 反向代理配置（Nginx）
-
-```nginx
-server {
-    server_name your-domain.com;
-
-    location / {
-        proxy_pass http://127.0.0.1:3000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-    }
-
-    location /ws/ {
-        proxy_pass http://127.0.0.1:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-    }
-
-    location /danmu/ws {
-        proxy_pass http://127.0.0.1:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-    }
-
-    listen 443 ssl;
-    # ssl_certificate /path/to/cert.pem;
-    # ssl_certificate_key /path/to/key.pem;
+```json
+{
+  "identityCode": "你的身份码"
 }
 ```
 
-## 技术栈
+**管理员指令 / Admin command:**
+```
+/bilibili identitycode <身份码>
+```
 
-| 层 | 技术 |
+## 使用流程 / Usage Flow
+
+```
+主播在 B 站开播 → 获取身份码 → 在 H5 面板验证 → 获取 OBS 弹幕地址
+Stream starts → Get identity code → Verify in H5 panel → Get OBS URL
+                                         ↓
+                              MC 模组自动连接弹幕 → 游戏内显示弹幕
+                              MC Mod connects → Display danmaku in game
+```
+
+1. 主播在 B 站开播，从[开播页面](https://link.bilibili.com/p/center/index#/my-room/start-live)获取身份码
+2. 在 H5 管理面板输入身份码完成验证
+3. 验证成功后获得 OBS 弹幕地址：`https://your-domain.com/danmu/{识别码}`
+4. 在 MC 模组配置中填入身份码，游戏内即可显示弹幕
+
+1. Streamer gets identity code from [live setup page](https://link.bilibili.com/p/center/index#/my-room/start-live)
+2. Enter identity code in H5 panel to verify
+3. Get OBS danmaku URL: `https://your-domain.com/danmu/{displayCode}`
+4. Enter identity code in MC mod config, danmaku appears in game
+
+## API 接口 / API Endpoints
+
+| 接口 / Endpoint | 方法 / Method | 说明 / Description |
+|------|------|------|
+| `/api/login` | POST | 身份码验证 / Identity code verification |
+| `/api/me` | GET | 查询登录状态 / Check login status |
+| `/api/room-info` | GET | 获取主播信息 / Get streamer info |
+| `/api/avatar` | GET | 头像代理 / Avatar proxy |
+| `/api/mod/latest` | GET | 获取最新版本 / Get latest version |
+| `/api/health` | GET | 健康检查 / Health check |
+| `/ws/danmu/{code}` | WS | 公开弹幕 / Public danmaku |
+| `/danmu/ws?token=` | WS | 管理弹幕 / Admin danmaku |
+
+## 技术栈 / Tech Stack
+
+| 层 / Layer | 技术 / Technology |
 |----|------|
 | MC 模组 | Java 17 · Minecraft Forge 47.x |
-| 前端 | Vue 3 · Vite 5 |
-| 后端 | Node.js · Express · WebSocket |
-| 存储 | SQLite（sql.js，纯 WASM） |
-| 认证 | JWT |
-| 数据源 | 哔哩哔哩直播开放平台 API v2 |
+| 前端 / Frontend | Vue 3 · Vite 5 |
+| 后端 / Backend | Node.js · Express · WebSocket |
+| 存储 / Storage | SQLite（sql.js） |
+| 认证 / Auth | JWT |
+| 数据源 / Data | 哔哩哔哩直播开放平台 API v2 |
 
-## 注意事项
+## 项目结构 / Project Structure
+
+```
+bilibiliChat-MC-Forge/
+├── src/                          # MC Forge Mod 源码 / MC Forge Mod source
+├── 1.20.1-F/                     # 正式版 Mod（独立构建）/ Production mod (standalone build)
+├── h5-plugin/                    # H5 管理面板 / H5 management panel
+│   ├── client/                   # Vue 3 前端 / Vue 3 frontend
+│   └── server/                   # Express 后端 / Express backend
+├── build.gradle                  # Forge 构建配置 / Forge build config
+└── gradle.properties             # 模组版本与元数据 / Mod version & metadata
+```
+
+## 注意事项 / Notes
 
 - `BILIBILI_ACCESS_KEY` 等凭据属于敏感信息，**不要**提交到仓库或公开分享
-- B 站头像通过后端代理获取，前端不直接请求 B 站 CDN
 - 识别码为 8 位随机字符串，同一身份码始终映射到同一识别码
 - OBS 弹幕页面断线后会自动重连（3 秒间隔）
-- GitHub Releases 版本信息缓存 10 分钟
+
+- `BILIBILI_ACCESS_KEY` and other credentials are sensitive. **Do NOT** commit to repository or share publicly
+- Display codes are 8-character random strings, consistently mapped to identity codes
+- OBS danmaku page auto-reconnects on disconnect (3s interval)
 
 ## License
 
-当前工程为 All Rights Reserved。详情见 [SECURITY.md](SECURITY.md)。
+当前工程为 All Rights Reserved / All Rights Reserved
+
+## 相关链接 / Links
+
+- [GitHub](https://github.com/JeffreyMing2004/BilibiliChat-MC-Forge)
+- [Modrinth](https://modrinth.com/mod/blchat)
+- [问题反馈 / Issues](https://github.com/JeffreyMing2004/BilibiliChat-MC-Forge/issues)
+- [H5 弹幕工具 / H5 Danmaku Tool](https://h5.mingpixel.net)

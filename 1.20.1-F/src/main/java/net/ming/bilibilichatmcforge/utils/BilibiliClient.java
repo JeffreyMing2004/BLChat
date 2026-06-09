@@ -46,11 +46,11 @@ public class BilibiliClient {
         if (isRunning) return;
         isRunning = true;
 
-        String roomCode = JsonConfigManager.getInstance().roomCode;
-        if (roomCode == null || roomCode.isEmpty()) {
+        String identityCode = JsonConfigManager.getInstance().identityCode;
+        if (identityCode == null || identityCode.isEmpty()) {
             LOGGER.error("Bilibili room code is not configured");
             server.execute(() -> server.getPlayerList().broadcastSystemMessage(
-                    Component.translatable("mod.bilibilichatmcforge.error.room_code_missing"), false));
+                    Component.translatable("mod.bilibilichatmcforge.error.identity_code_missing"), false));
             isRunning = false;
             return;
         }
@@ -60,14 +60,14 @@ public class BilibiliClient {
 
     private void connect() {
         try {
-            String roomCode = JsonConfigManager.getInstance().roomCode;
-            LOGGER.info("Connecting to Bilibili live room {}...", roomCode);
+            String identityCode = JsonConfigManager.getInstance().identityCode;
+            LOGGER.info("Connecting to Bilibili live room {}...", identityCode);
 
             HTTP_CLIENT.newWebSocketBuilder()
-                    .buildAsync(URI.create(WSS_URL), new BilibiliWebSocketListener(roomCode))
+                    .buildAsync(URI.create(WSS_URL), new BilibiliWebSocketListener(identityCode))
                     .thenAccept(ws -> {
                         this.webSocket = ws;
-                        LOGGER.info("Connected to Bilibili WebSocket for room {}", roomCode);
+                        LOGGER.info("Connected to Bilibili WebSocket for room {}", identityCode);
                         server.execute(() -> server.getPlayerList().broadcastSystemMessage(
                                 Component.translatable("mod.bilibilichatmcforge.info.connected"), false));
                     });
@@ -99,17 +99,17 @@ public class BilibiliClient {
     }
 
     private class BilibiliWebSocketListener implements WebSocket.Listener {
-        private final String roomCode;
+        private final String identityCode;
 
-        public BilibiliWebSocketListener(String roomCode) {
-            this.roomCode = roomCode;
+        public BilibiliWebSocketListener(String identityCode) {
+            this.identityCode = identityCode;
         }
 
         @Override
         public void onOpen(WebSocket webSocket) {
             JsonObject authBody = new JsonObject();
             authBody.addProperty("uid", 0);
-            authBody.addProperty("roomid", Long.parseLong(roomCode));
+            authBody.addProperty("roomid", Long.parseLong(identityCode));
             authBody.addProperty("protover", 3);
             authBody.addProperty("platform", "web");
             authBody.addProperty("type", 2);
@@ -208,7 +208,7 @@ public class BilibiliClient {
                 case "DANMU_MSG": {
                     JsonArray info = json.getAsJsonArray("info");
                     String msg = info.get(1).getAsString();
-                    JsonArray userInfo = info.getAsJsonArray("2");
+                    JsonArray userInfo = info.get(2).getAsJsonArray();
                     String uname = userInfo.get(1).getAsString();
                     return Component.translatable("mod.bilibilichatmcforge.chat.danmaku", uname, msg);
                 }
