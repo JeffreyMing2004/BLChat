@@ -20,7 +20,7 @@ public class JsonConfigManager {
     private static ConfigData instance;
 
     public static class ConfigData {
-        public String roomCode = "";
+        public String identityCode = "";
     }
 
     public static void load() {
@@ -51,8 +51,8 @@ public class JsonConfigManager {
         return instance;
     }
 
-    public static void setRoomId(String roomCode) {
-        getInstance().roomCode = roomCode;
+    public static void setIdentityCode(String identityCode) {
+        getInstance().identityCode = identityCode;
         save();
     }
 }
