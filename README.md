@@ -203,7 +203,8 @@ Stream starts → Get identity code → Verify in H5 panel → Get OBS URL
 ```
 bilibiliChat-MC-Forge/
 ├── src/                          # MC Forge Mod 源码 / MC Forge Mod source
-├── 1.20.1-F/                     # 正式版 Mod（独立构建）/ Production mod (standalone build)
+├── 1.20.1/                       # 按 MC 版本分类 / By MC version
+│   └── Forge/                    # Forge 版 Mod / Forge mod
 ├── h5-plugin/                    # H5 管理面板 / H5 management panel
 │   ├── client/                   # Vue 3 前端 / Vue 3 frontend
 │   └── server/                   # Express 后端 / Express backend
