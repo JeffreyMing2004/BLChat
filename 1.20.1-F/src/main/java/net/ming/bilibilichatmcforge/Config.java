@@ -9,14 +9,14 @@ import net.minecraftforge.fml.event.config.ModConfigEvent;
 public class Config {
     private static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();
 
-    private static final ForgeConfigSpec.ConfigValue<String> ROOM_CODE = BUILDER
-            .comment("Bilibili Live Room Code")
-            .define("roomCode", "");
+    private static final ForgeConfigSpec.ConfigValue<String> IDENTITY_CODE = BUILDER
+            .comment("Bilibili Live Identity Code")
+            .define("identityCode", "");
 
     static final ForgeConfigSpec SPEC = BUILDER.build();
 
     @SubscribeEvent
     static void onLoad(final ModConfigEvent event) {
-        JsonConfigManager.setRoomCode(ROOM_CODE.get());
+        JsonConfigManager.setRoomCode(IDENTITY_CODE.get());
     }
 }
