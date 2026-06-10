@@ -17,6 +17,6 @@ public class Config {
 
     @SubscribeEvent
     static void onLoad(final ModConfigEvent event) {
-        JsonConfigManager.setRoomCode(IDENTITY_CODE.get());
+        JsonConfigManager.setIdentityCode(IDENTITY_CODE.get());
     }
 }

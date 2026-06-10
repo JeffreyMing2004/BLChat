@@ -34,8 +34,8 @@ Minecraft Forge Mod，在游戏内实时查看 B 站直播间弹幕。
 
 ## 环境要求
 
-- Minecraft 1.20.1
-- Forge 47.4.20+
+- Minecraft 1.20.1 - 1.20.6
+- Forge 47+
 - Java 17+
 
 ## 下载
@@ -43,9 +43,29 @@ Minecraft Forge Mod，在游戏内实时查看 B 站直播间弹幕。
 | 文件 | 说明 |
 |------|------|
 | `blchat-1.0.0.jar` | Forge 版（未混淆） |
-| `blchat-1.0.0-obf.jar` | Forge 版（代码混淆） |
 
 ## 链接
 
 - https://github.com/JeffreyMing2004/BLChat
 - https://modrinth.com/mod/blchat
+
+## 更新日志
+
+### v1.0.2 (2026-06-11)
+
+- 合并 1.20.1 和 1.20.2 为统一的 1.20.x 版本
+- 理论支持 Minecraft 1.20.1 - 1.20.6 所有版本
+- 修复 Config.java 中 `setRoomCode` 方法不存在的 bug
+
+### v1.0.1 (2026-06-11)
+
+- 支持 1.20.2 Forge
+
+### v1.0.0 (2026-06-06)
+
+- 初始发布
+- 支持弹幕、礼物、SC、大航海消息显示
+- 游戏内配置界面
+- 管理员指令 `/bilibili identitycode`
+- 断线自动重连
+- 使用 B 站公开直播 WebSocket 协议，无需 Open Platform 认证
