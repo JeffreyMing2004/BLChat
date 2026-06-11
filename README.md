@@ -56,11 +56,11 @@ BLChat is a complete Bilibili live danmaku integration for Minecraft, consisting
 
 ### 前置条件 / Prerequisites
 
-- **MC 模组**：Java 17、Minecraft 1.20.1 + Forge 47.4.20
+- **MC 模组**：Java 17、Minecraft 1.20.1-1.20.6 + Forge 47-50
 - **H5 插件**：Node.js 18+
 - **B 站开放平台**：已申请并获得 Access Key、Access Secret、App ID
 
-MC Mod: Java 17, Minecraft 1.20.1 + Forge 47.4.20  
+MC Mod: Java 17, Minecraft 1.20.1-1.20.6 + Forge 47-50
 H5 Plugin: Node.js 18+  
 Bilibili Open Platform: Access Key, Access Secret, App ID required
 
@@ -130,7 +130,7 @@ npm start
 
 ### 二、安装 MC 模组 / Install MC Mod
 
-1. 安装 Minecraft Forge 1.20.1 / Install Minecraft Forge 1.20.1
+1. 安装 Minecraft Forge（支持 1.20.1-1.20.6） / Install Minecraft Forge (supports 1.20.1-1.20.6)
 2. 从 [GitHub Releases](https://github.com/JeffreyMing2004/BilibiliChat-MC-Forge/releases) 下载最新 `.jar`
 3. 将 `.jar` 放入 `mods/` 目录 / Put `.jar` into `mods/` directory
 4. 启动游戏 / Launch game
@@ -203,7 +203,8 @@ Stream starts → Get identity code → Verify in H5 panel → Get OBS URL
 ```
 bilibiliChat-MC-Forge/
 ├── src/                          # MC Forge Mod 源码 / MC Forge Mod source
-├── 1.20.1-F/                     # 正式版 Mod（独立构建）/ Production mod (standalone build)
+├── 1.20.x/                       # MC 1.20.1-1.20.6 通用版 / Universal for 1.20.1-1.20.6
+│   └── Forge/                    # Forge 版 Mod / Forge mod
 ├── h5-plugin/                    # H5 管理面板 / H5 management panel
 │   ├── client/                   # Vue 3 前端 / Vue 3 frontend
 │   └── server/                   # Express 后端 / Express backend
