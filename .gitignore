@@ -10,6 +10,7 @@ proguard.pro
 proguard.zip
 
 #doc
+CHANGELOG.md
 
 # IDE
 .idea
