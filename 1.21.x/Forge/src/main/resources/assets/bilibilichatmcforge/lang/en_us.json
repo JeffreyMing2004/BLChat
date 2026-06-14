@@ -1,0 +1,16 @@
+{
+  "mod.bilibilichatmcforge.config.title": "BLChat Configuration",
+  "mod.bilibilichatmcforge.config.identity_code": "Identity Code",
+  "mod.bilibilichatmcforge.config.identity_code.hint": "Enter Bilibili Live Identity Code",
+  "mod.bilibilichatmcforge.config.save": "Save & Apply",
+  "mod.bilibilichatmcforge.config.cancel": "Cancel",
+  "mod.bilibilichatmcforge.chat.restarting": "Reconnecting to Bilibili live room...",
+  "mod.bilibilichatmcforge.chat.identity_code_updated": "Identity code updated: %s",
+  "mod.bilibilichatmcforge.chat.danmaku": "[Bilibili DM] %s: %s",
+  "mod.bilibilichatmcforge.chat.gift": "[Bilibili Gift] %s sent %s x%d",
+  "mod.bilibilichatmcforge.chat.sc": "[Bilibili SC] %s (￥%d): %s",
+  "mod.bilibilichatmcforge.chat.guard": "[Bilibili Guard] %s subscribed %s",
+  "mod.bilibilichatmcforge.error.identity_code_missing": "Identity code not configured. Please set it in config file or Mod settings.",
+  "mod.bilibilichatmcforge.error.connect_failed": "Failed to connect to live room: %s",
+  "mod.bilibilichatmcforge.info.connected": "Connected to Bilibili live room"
+}
