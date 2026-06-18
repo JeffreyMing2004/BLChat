@@ -24,10 +24,10 @@ public class Bilibilichatmcforge {
         }
     }
 
-    public Bilibilichatmcforge() {
+    public Bilibilichatmcforge(ModContainer container) {
         JsonConfigManager.load();
-        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, Config.SPEC);
-        ModLoadingContext.get().registerExtensionPoint(ConfigScreenHandler.ConfigScreenFactory.class,
+        container.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
+        container.registerExtensionPoint(ConfigScreenHandler.ConfigScreenFactory.class,
                 () -> new ConfigScreenHandler.ConfigScreenFactory((mc, lastScreen) -> new BilibiliConfigScreen(lastScreen)));
 
         LOGGER.info("BLChat mod loaded successfully!");
