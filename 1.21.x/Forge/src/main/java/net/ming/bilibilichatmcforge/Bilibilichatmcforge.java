@@ -1,7 +1,7 @@
 package net.ming.bilibilichatmcforge;
 
 import com.mojang.logging.LogUtils;
-import net.minecraftforge.fml.ModContainer;
+import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.client.ConfigScreenHandler;
@@ -24,10 +24,10 @@ public class Bilibilichatmcforge {
         }
     }
 
-    public Bilibilichatmcforge(ModContainer container) {
+    public Bilibilichatmcforge() {
         JsonConfigManager.load();
-        container.addConfig(new ModConfig(ModConfig.Type.COMMON, Config.SPEC, container));
-        container.registerExtensionPoint(ConfigScreenHandler.ConfigScreenFactory.class,
+        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, Config.SPEC);
+        ModLoadingContext.get().registerExtensionPoint(ConfigScreenHandler.ConfigScreenFactory.class,
                 () -> new ConfigScreenHandler.ConfigScreenFactory((mc, lastScreen) -> new BilibiliConfigScreen(lastScreen)));
 
         LOGGER.info("BLChat mod loaded successfully!");
