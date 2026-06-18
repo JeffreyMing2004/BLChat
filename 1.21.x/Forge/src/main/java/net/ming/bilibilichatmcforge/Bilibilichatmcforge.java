@@ -26,7 +26,7 @@ public class Bilibilichatmcforge {
 
     public Bilibilichatmcforge(ModContainer container) {
         JsonConfigManager.load();
-        container.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
+        container.addConfig(new ModConfig(ModConfig.Type.COMMON, Config.SPEC, container));
         container.registerExtensionPoint(ConfigScreenHandler.ConfigScreenFactory.class,
                 () -> new ConfigScreenHandler.ConfigScreenFactory((mc, lastScreen) -> new BilibiliConfigScreen(lastScreen)));
 
