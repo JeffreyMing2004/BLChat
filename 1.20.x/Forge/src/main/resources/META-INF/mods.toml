@@ -9,6 +9,7 @@ displayName = "${mod_name}"
 displayURL = "https://github.com/JeffreyMing2004"
 authors = "${mod_authors}"
 description = '''${mod_description}'''
+clientSideOnly = true
 
 [[dependencies."${mod_id}"]]
 modId = "forge"

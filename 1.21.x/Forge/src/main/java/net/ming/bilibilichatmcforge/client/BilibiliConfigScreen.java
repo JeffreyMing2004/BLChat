@@ -6,6 +6,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
 
 public class BilibiliConfigScreen extends Screen {
@@ -47,10 +48,9 @@ public class BilibiliConfigScreen extends Screen {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
-        guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, 10, 0xFFFFFF);
-        guiGraphics.drawString(this.font, Component.translatable("mod.bilibilichatmcforge.config.identity_code"), this.width / 2 - 130, 48, 0xA0A0A0);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
+        guiGraphics.drawCenteredString(this.font, Language.getInstance().getVisualOrder(this.title), this.width / 2, 10, 0xFFFFFF);
+        guiGraphics.drawString(this.font, Language.getInstance().getVisualOrder(Component.translatable("mod.bilibilichatmcforge.config.identity_code")), this.width / 2 - 130, 48, 0xA0A0A0);
     }
 
     @Override

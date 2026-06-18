@@ -4,11 +4,12 @@ license = "${mod_license}"
 
 [[mods]]
 modId = "${mod_id}"
-version = "${mod_version}"
+version = "1.0.2"
 displayName = "${mod_name}"
 displayURL = "https://github.com/JeffreyMing2004"
 authors = "${mod_authors}"
 description = '''${mod_description}'''
+clientSideOnly = true
 
 [[dependencies."${mod_id}"]]
 modId = "forge"
