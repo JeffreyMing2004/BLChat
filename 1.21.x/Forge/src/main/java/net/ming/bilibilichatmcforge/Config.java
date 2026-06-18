@@ -1,11 +1,7 @@
 package net.ming.bilibilichatmcforge;
 
 import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.config.ModConfigEvent;
 
-@Mod.EventBusSubscriber(modid = Bilibilichatmcforge.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class Config {
     private static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();
 
@@ -15,8 +11,11 @@ public class Config {
 
     static final ForgeConfigSpec SPEC = BUILDER.build();
 
-    @SubscribeEvent
-    static void onLoad(final ModConfigEvent event) {
-        JsonConfigManager.setIdentityCode(IDENTITY_CODE.get());
+    public static String getIdentityCode() {
+        return IDENTITY_CODE.get();
+    }
+
+    public static void setIdentityCode(String code) {
+        IDENTITY_CODE.set(code);
     }
 }

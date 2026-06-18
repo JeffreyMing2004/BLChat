@@ -3,6 +3,10 @@
 build/
 !gradle/wrapper/gradle-wrapper.jar
 
+# build/
+crash-reports/
+
+
 # proguard
 proguard-7.4.2/
 proguard-rules.pro
