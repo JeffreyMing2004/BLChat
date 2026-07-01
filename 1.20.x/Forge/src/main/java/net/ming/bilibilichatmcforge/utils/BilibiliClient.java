@@ -58,16 +58,46 @@ public class BilibiliClient {
         CompletableFuture.runAsync(this::connect);
     }
 
+    private long resolveRoomId(String identityCode) throws Exception {
+        long roomId;
+        try {
+            roomId = Long.parseLong(identityCode);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException(
+                    "Room code must be numeric, got: " + identityCode
+                            + ". Please use the numeric room ID from the live room URL.");
+        }
+
+        java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
+                .uri(URI.create("https://api.live.bilibili.com/room/v1/Room/get_info?room_id=" + roomId))
+                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+                .GET()
+                .build();
+
+        java.net.http.HttpResponse<String> response = HTTP_CLIENT.send(request,
+                java.net.http.HttpResponse.BodyHandlers.ofString());
+
+        JsonObject json = GSON.fromJson(response.body(), JsonObject.class);
+        if (json.get("code").getAsInt() == 0) {
+            return json.getAsJsonObject("data").get("room_id").getAsLong();
+        }
+
+        throw new Exception("Failed to resolve room ID: " + json.get("message").getAsString());
+    }
+
     private void connect() {
         try {
             String identityCode = JsonConfigManager.getInstance().identityCode;
-            LOGGER.info("Connecting to Bilibili live room {}...", identityCode);
+            LOGGER.info("Resolving Bilibili live room {}...", identityCode);
+
+            long roomId = resolveRoomId(identityCode);
+            LOGGER.info("Resolved to room ID: {}", roomId);
 
             HTTP_CLIENT.newWebSocketBuilder()
-                    .buildAsync(URI.create(WSS_URL), new BilibiliWebSocketListener(identityCode))
+                    .buildAsync(URI.create(WSS_URL), new BilibiliWebSocketListener(roomId))
                     .thenAccept(ws -> {
                         this.webSocket = ws;
-                        LOGGER.info("Connected to Bilibili WebSocket for room {}", identityCode);
+                        LOGGER.info("Connected to Bilibili WebSocket for room {}", roomId);
                         server.execute(() -> server.getPlayerList().broadcastSystemMessage(
                                 Component.translatable("mod.bilibilichatmcforge.info.connected"), false));
                     });
@@ -99,17 +129,17 @@ public class BilibiliClient {
     }
 
     private class BilibiliWebSocketListener implements WebSocket.Listener {
-        private final String identityCode;
+        private final long roomId;
 
-        public BilibiliWebSocketListener(String identityCode) {
-            this.identityCode = identityCode;
+        public BilibiliWebSocketListener(long roomId) {
+            this.roomId = roomId;
         }
 
         @Override
         public void onOpen(WebSocket webSocket) {
             JsonObject authBody = new JsonObject();
             authBody.addProperty("uid", 0);
-            authBody.addProperty("roomid", Long.parseLong(identityCode));
+            authBody.addProperty("roomid", roomId);
             authBody.addProperty("protover", 3);
             authBody.addProperty("platform", "web");
             authBody.addProperty("type", 2);
