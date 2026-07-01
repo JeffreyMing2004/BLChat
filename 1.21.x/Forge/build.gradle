@@ -43,6 +43,10 @@ minecraft {
 
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
+// Fix: Place resources alongside compiled classes so FML's ExplodedDirectoryLocator
+// can find both mods.toml and @Mod classes in the same directory during dev runs.
+sourceSets.main.output.resourcesDir = file("$buildDir/classes/java/main")
+
 repositories {
     mavenCentral()
 }
