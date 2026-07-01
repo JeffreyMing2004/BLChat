@@ -16,8 +16,10 @@ import java.net.http.WebSocket;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executors;
@@ -25,6 +27,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.Inflater;
 import java.io.ByteArrayOutputStream;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 
 public class BilibiliClient {
     private static final String WSS_URL = "wss://broadcastlv.chat.bilibili.com/sub";
@@ -38,6 +42,8 @@ public class BilibiliClient {
     private final MinecraftServer server;
     private boolean isRunning = false;
     private java.util.concurrent.ScheduledFuture<?> heartbeatTask;
+    private int reconnectAttempts = 0;
+    private static final int MAX_RECONNECT_ATTEMPTS = 5;
 
     public BilibiliClient(MinecraftServer server) {
         this.server = server;
@@ -46,6 +52,7 @@ public class BilibiliClient {
     public void start() {
         if (isRunning) return;
         isRunning = true;
+        reconnectAttempts = 0;
 
         String identityCode = JsonConfigManager.getInstance().identityCode;
         if (identityCode == null || identityCode.isEmpty()) {
@@ -90,29 +97,105 @@ public class BilibiliClient {
     }
 
     private long resolveRoomIdByCode(String code) throws Exception {
+        String accessKeyId = JsonConfigManager.getInstance().accessKeyId;
+        String accessKeySecret = JsonConfigManager.getInstance().accessKeySecret;
+
+        if (accessKeyId == null || accessKeyId.isEmpty() || accessKeySecret == null || accessKeySecret.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "使用身份码需要配置 accessKeyId 和 accessKeySecret。\n"
+                            + "请在B站直播开放平台(https://open-live.bilibili.com/)获取这些密钥，\n"
+                            + "或直接使用数字房间号代替身份码。");
+        }
+
         JsonObject body = new JsonObject();
         body.addProperty("app_id", APP_ID);
         body.addProperty("code", code);
+        String bodyStr = GSON.toJson(body);
 
-        java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
-                .uri(URI.create("https://live-open.bilibili.com/xlive/open-platform/v1/common/startPlay"))
-                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
-                .header("Content-Type", "application/json")
-                .POST(java.net.http.HttpRequest.BodyPublishers.ofString(GSON.toJson(body)))
-                .build();
+        String bodyMd5 = md5(bodyStr);
+        long timestamp = System.currentTimeMillis() / 1000;
+        String nonce = UUID.randomUUID().toString().replace("-", "");
 
-        java.net.http.HttpResponse<String> response = HTTP_CLIENT.send(request,
-                java.net.http.HttpResponse.BodyHandlers.ofString());
+        // 构造待签名字符串
+        String stringToSign = "x-bili-accesskeyid:" + accessKeyId + "\n"
+                + "x-bili-content-md5:" + bodyMd5 + "\n"
+                + "x-bili-signature-method:HMAC-SHA256\n"
+                + "x-bili-signature-nonce:" + nonce + "\n"
+                + "x-bili-signature-version:2.0\n"
+                + "x-bili-timestamp:" + timestamp;
 
-        JsonObject json = GSON.fromJson(response.body(), JsonObject.class);
-        if (json.get("code").getAsInt() == 0) {
-            JsonObject data = json.getAsJsonObject("data");
-            long roomId = data.get("room_id").getAsLong();
-            LOGGER.info("通过身份码获取到房间号: {}", roomId);
-            return roomId;
+        String signature = hmacSha256(accessKeySecret, stringToSign);
+
+        try {
+            java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
+                    .uri(URI.create("https://member.bilibili.com/arcopen/fn/live/room/info"))
+                    .header("Content-Type", "application/json")
+                    .header("x-bili-accesskeyid", accessKeyId)
+                    .header("x-bili-content-md5", bodyMd5)
+                    .header("x-bili-signature-method", "HMAC-SHA256")
+                    .header("x-bili-signature-nonce", nonce)
+                    .header("x-bili-signature-version", "2.0")
+                    .header("x-bili-timestamp", String.valueOf(timestamp))
+                    .header("Authorization", signature)
+                    .POST(java.net.http.HttpRequest.BodyPublishers.ofString(bodyStr))
+                    .build();
+
+            java.net.http.HttpResponse<String> response = HTTP_CLIENT.send(request,
+                    java.net.http.HttpResponse.BodyHandlers.ofString());
+
+            LOGGER.info("开放平台API响应: status={}, body={}", response.statusCode(), response.body());
+
+            String responseBody = response.body();
+            if (responseBody == null || responseBody.isEmpty()) {
+                throw new Exception("开放平台API返回空响应");
+            }
+
+            // 尝试解析JSON，如果不是JSON格式则返回原始内容
+            if (!responseBody.trim().startsWith("{")) {
+                throw new Exception("开放平台API返回非JSON响应: " + responseBody);
+            }
+
+            JsonObject json = GSON.fromJson(responseBody, JsonObject.class);
+            if (json.get("code").getAsInt() == 0) {
+                JsonObject data = json.getAsJsonObject("data");
+                long roomId = data.get("room_id").getAsLong();
+                LOGGER.info("通过身份码获取到房间号: {}", roomId);
+                return roomId;
+            }
+
+            throw new Exception("通过身份码获取房间号失败: " + json.get("message").getAsString());
+        } catch (java.net.ConnectException e) {
+            Throwable cause = e.getCause();
+            while (cause != null) {
+                if (cause instanceof java.nio.channels.UnresolvedAddressException) {
+                    throw new Exception("无法解析 member.bilibili.com 域名，请检查网络连接或DNS设置。");
+                }
+                cause = cause.getCause();
+            }
+            throw new Exception("连接开放平台API失败: " + e.getMessage());
         }
+    }
 
-        throw new Exception("通过身份码获取房间号失败: " + json.get("message").getAsString());
+    private String md5(String input) throws Exception {
+        MessageDigest md = MessageDigest.getInstance("MD5");
+        byte[] digest = md.digest(input.getBytes(StandardCharsets.UTF_8));
+        StringBuilder sb = new StringBuilder();
+        for (byte b : digest) {
+            sb.append(String.format("%02x", b));
+        }
+        return sb.toString();
+    }
+
+    private String hmacSha256(String secret, String data) throws Exception {
+        Mac mac = Mac.getInstance("HmacSHA256");
+        SecretKeySpec keySpec = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+        mac.init(keySpec);
+        byte[] digest = mac.doFinal(data.getBytes(StandardCharsets.UTF_8));
+        StringBuilder sb = new StringBuilder();
+        for (byte b : digest) {
+            sb.append(String.format("%02x", b));
+        }
+        return sb.toString();
     }
 
     private void connect() {
@@ -124,9 +207,12 @@ public class BilibiliClient {
             LOGGER.info("Resolved to room ID: {}", roomId);
 
             HTTP_CLIENT.newWebSocketBuilder()
+                    .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+                    .header("Origin", "https://live.bilibili.com")
                     .buildAsync(URI.create(WSS_URL), new BilibiliWebSocketListener(roomId))
                     .thenAccept(ws -> {
                         this.webSocket = ws;
+                        reconnectAttempts = 0;
                         LOGGER.info("Connected to Bilibili WebSocket for room {}", roomId);
                         server.execute(() -> server.getPlayerList().broadcastSystemMessage(
                                 Component.translatable("mod.bilibilichatmcforge.info.connected"), false));
@@ -135,7 +221,7 @@ public class BilibiliClient {
             LOGGER.error("Error connecting to Bilibili", e);
             String errorMsg = e.getMessage();
             if (e.getCause() instanceof java.nio.channels.UnresolvedAddressException) {
-                errorMsg = "DNS Resolve Failed. Please check your network.";
+                errorMsg = "DNS解析失败，请检查网络连接";
             }
             String finalErrorMsg = errorMsg;
             server.execute(() -> server.getPlayerList().broadcastSystemMessage(
@@ -195,7 +281,16 @@ public class BilibiliClient {
         public CompletionStage<?> onClose(WebSocket webSocket, int statusCode, String reason) {
             LOGGER.info("Bilibili WebSocket closed: {} {}", statusCode, reason);
             if (isRunning) {
-                LOGGER.info("Reconnecting in 5 seconds...");
+                reconnectAttempts++;
+                if (reconnectAttempts > MAX_RECONNECT_ATTEMPTS) {
+                    LOGGER.error("达到最大重连次数({})，停止重连", MAX_RECONNECT_ATTEMPTS);
+                    server.execute(() -> server.getPlayerList().broadcastSystemMessage(
+                            Component.translatable("mod.bilibilichatmcforge.error.connect_failed",
+                                    "WebSocket连接失败，已达到最大重连次数"), false));
+                    isRunning = false;
+                    return WebSocket.Listener.super.onClose(webSocket, statusCode, reason);
+                }
+                LOGGER.info("Reconnecting in 5 seconds... (attempt {}/{})", reconnectAttempts, MAX_RECONNECT_ATTEMPTS);
                 SCHEDULER.schedule(BilibiliClient.this::connect, 5, TimeUnit.SECONDS);
             }
             return WebSocket.Listener.super.onClose(webSocket, statusCode, reason);
