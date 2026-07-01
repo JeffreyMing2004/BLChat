@@ -28,6 +28,7 @@ import java.io.ByteArrayOutputStream;
 
 public class BilibiliClient {
     private static final String WSS_URL = "wss://broadcastlv.chat.bilibili.com/sub";
+    private static final long APP_ID = 1779863002402L;
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final Gson GSON = new Gson();
     private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder().build();
@@ -59,15 +60,18 @@ public class BilibiliClient {
     }
 
     private long resolveRoomId(String identityCode) throws Exception {
-        long roomId;
+        // 尝试直接解析为数字房间号
         try {
-            roomId = Long.parseLong(identityCode);
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException(
-                    "Room code must be numeric, got: " + identityCode
-                            + ". Please use the numeric room ID from the live room URL.");
+            long roomId = Long.parseLong(identityCode);
+            return resolveShortRoomId(roomId);
+        } catch (NumberFormatException ignored) {
         }
 
+        // 非数字，作为身份码通过开放平台API获取房间号
+        return resolveRoomIdByCode(identityCode);
+    }
+
+    private long resolveShortRoomId(long roomId) throws Exception {
         java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
                 .uri(URI.create("https://api.live.bilibili.com/room/v1/Room/get_info?room_id=" + roomId))
                 .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
@@ -82,7 +86,33 @@ public class BilibiliClient {
             return json.getAsJsonObject("data").get("room_id").getAsLong();
         }
 
-        throw new Exception("Failed to resolve room ID: " + json.get("message").getAsString());
+        throw new Exception("获取房间信息失败: " + json.get("message").getAsString());
+    }
+
+    private long resolveRoomIdByCode(String code) throws Exception {
+        JsonObject body = new JsonObject();
+        body.addProperty("app_id", APP_ID);
+        body.addProperty("code", code);
+
+        java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
+                .uri(URI.create("https://live-open.bilibili.com/xlive/open-platform/v1/common/startPlay"))
+                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+                .header("Content-Type", "application/json")
+                .POST(java.net.http.HttpRequest.BodyPublishers.ofString(GSON.toJson(body)))
+                .build();
+
+        java.net.http.HttpResponse<String> response = HTTP_CLIENT.send(request,
+                java.net.http.HttpResponse.BodyHandlers.ofString());
+
+        JsonObject json = GSON.fromJson(response.body(), JsonObject.class);
+        if (json.get("code").getAsInt() == 0) {
+            JsonObject data = json.getAsJsonObject("data");
+            long roomId = data.get("room_id").getAsLong();
+            LOGGER.info("通过身份码获取到房间号: {}", roomId);
+            return roomId;
+        }
+
+        throw new Exception("通过身份码获取房间号失败: " + json.get("message").getAsString());
     }
 
     private void connect() {

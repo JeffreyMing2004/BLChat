@@ -43,9 +43,18 @@ minecraft {
 
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
-// Fix: Place resources alongside compiled classes so FML's ExplodedDirectoryLocator
-// can find both mods.toml and @Mod classes in the same directory during dev runs.
-sourceSets.main.output.resourcesDir = file("$buildDir/classes/java/main")
+// Fix: Copy compiled .class files into the resources output directory so that
+// FML's ClasspathLocator can find @Mod annotated classes in the same directory
+// as mods.toml during dev runs. FML discovers mods via getResources("META-INF/mods.toml"),
+// which resolves to build/resources/main, and then scans that same directory for .class files.
+tasks.register('copyClassesToResources', Copy) {
+    from sourceSets.main.output.classesDirs
+    into sourceSets.main.output.resourcesDir
+    dependsOn 'classes'
+}
+tasks.named('classes').configure {
+    finalizedBy 'copyClassesToResources'
+}
 
 repositories {
     mavenCentral()
