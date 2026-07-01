@@ -52,8 +52,9 @@ tasks.register('copyClassesToResources', Copy) {
     into sourceSets.main.output.resourcesDir
     dependsOn 'classes'
 }
-tasks.named('classes').configure {
-    finalizedBy 'copyClassesToResources'
+// Only run this copy before game launch tasks, not before jar (to avoid duplicate entries)
+tasks.matching { it.name.startsWith('run') }.configureEach {
+    dependsOn 'copyClassesToResources'
 }
 
 repositories {
