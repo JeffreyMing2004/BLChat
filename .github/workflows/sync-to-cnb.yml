@@ -1,0 +1,31 @@
+# GitHub → CNB 同步流水线
+# 当代码推送到 GitHub 时，自动同步到 CNB 仓库
+
+name: Sync to CNB
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Push to CNB
+        run: |
+          echo "🔗 正在同步 ${GITHUB_REF_NAME} 到 CNB 仓库..."
+          git remote add cnb "https://${CNB_USERNAME}:${CNB_TOKEN}@cnb.cool/${CNB_REPO}.git" 2>/dev/null || \
+            git remote set-url cnb "https://${CNB_USERNAME}:${CNB_TOKEN}@cnb.cool/${CNB_REPO}.git"
+          git push cnb "${GITHUB_REF_NAME}" --force
+          echo "✅ 同步完成！${GITHUB_REF_NAME} 已推送至 CNB。"
+        env:
+          CNB_USERNAME: ${{ secrets.CNB_USERNAME }}
+          CNB_TOKEN: ${{ secrets.CNB_TOKEN }}
+          CNB_REPO: ${{ secrets.CNB_REPO }}
