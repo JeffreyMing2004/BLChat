@@ -112,7 +112,7 @@ public class BilibiliClient {
         body.addProperty("code", code);
         String bodyStr = GSON.toJson(body);
 
-        String bodyMd5 = md5(bodyStr);
+        String bodyMd5 = md5("");
         long timestamp = System.currentTimeMillis() / 1000;
         String nonce = UUID.randomUUID().toString().replace("-", "");
 
@@ -137,7 +137,7 @@ public class BilibiliClient {
                     .header("x-bili-signature-version", "2.0")
                     .header("x-bili-timestamp", String.valueOf(timestamp))
                     .header("Authorization", signature)
-                    .POST(java.net.http.HttpRequest.BodyPublishers.ofString(bodyStr))
+                    .GET()
                     .build();
 
             java.net.http.HttpResponse<String> response = HTTP_CLIENT.send(request,
