@@ -43,19 +43,12 @@ minecraft {
 
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
-// Fix: Copy compiled .class files into the resources output directory so that
-// FML's ClasspathLocator can find @Mod annotated classes in the same directory
-// as mods.toml during dev runs. FML discovers mods via getResources("META-INF/mods.toml"),
-// which resolves to build/resources/main, and then scans that same directory for .class files.
-tasks.register('copyClassesToResources', Copy) {
-    from sourceSets.main.output.classesDirs
-    into sourceSets.main.output.resourcesDir
-    dependsOn 'classes'
-}
-// Only run this copy before game launch tasks, not before jar (to avoid duplicate entries)
-tasks.matching { it.name.startsWith('run') }.configureEach {
-    dependsOn 'copyClassesToResources'
-}
+// Fix: Merge resources into the classes directory so FML's ClasspathLocator can find
+// both mods.toml and @Mod annotated classes in the same directory during dev runs.
+// FML discovers mods via getResources("META-INF/mods.toml"), which resolves to a
+// classpath directory, then scans that same directory for .class files.
+// By placing everything in one directory, both are found together.
+sourceSets.main.output.resourcesDir = file("$buildDir/classes/java/main")
 
 repositories {
     mavenCentral()
@@ -66,6 +59,10 @@ dependencies {
 }
 
 tasks.named('processResources', ProcessResources).configure {
+    // Clean up the old default resources directory to prevent stale mods.toml from being found
+    doFirst {
+        project.delete(file("$buildDir/resources/main"))
+    }
     var replaceProperties = [minecraft_version   : minecraft_version, minecraft_version_range: minecraft_version_range,
                              forge_version       : forge_version, forge_version_range: forge_version_range,
                              loader_version_range: loader_version_range,

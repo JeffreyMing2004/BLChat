@@ -96,20 +96,53 @@ tasks.register('obfuscate', JavaExec) {
 
     classpath = configurations.allatori
     mainClass = 'com.allatori.Obfuscate'
+    workingDir = projectDir
 
     doFirst {
         def jarFile = jar.archiveFile.get().asFile
-        def outputFile = file("build/libs/${jar.archiveBaseName.get()}-${jar.archiveVersion.get()}-obfuscated.jar")
+        def baseName = jar.archiveBaseName.get()
+        def version = jar.archiveVersion.get()
+        def inputPath = jarFile.absolutePath.replace('\\', '/')
+        def outputPath = file("build/libs/${baseName}-${version}-obfuscated.jar").absolutePath.replace('\\', '/')
+        def logPath = file("build/allatori-log.xml").absolutePath.replace('\\', '/')
 
-        // 生成 Allatori 配置，替换变量
-        def configText = file('allatori.xml').text
-        configText = configText.replace('${version}', jar.archiveVersion.get())
+        // 生成 Allatori 配置
+        def configXml = """<config>
+    <input>
+        <jar in="${inputPath}" out="${outputPath}"/>
+    </input>
+    <keep-names>
+        <class access="protected+">
+            <field access="protected+"/>
+            <method access="protected+"/>
+        </class>
+    </keep-names>
+    <ignore-classes>
+        <class template="class net.ming.bilibilichatmcforge.Bilibilichatmcforge"/>
+        <class template="class net.ming.bilibilichatmcforge.Config"/>
+        <class template="class net.ming.bilibilichatmcforge.client.*"/>
+        <class template="class net.minecraft.**"/>
+        <class template="class net.minecraftforge.**"/>
+        <class template="class com.mojang.**"/>
+        <class template="class cpw.**"/>
+        <class template="class org.slf4j.**"/>
+        <class template="class com.google.gson.**"/>
+    </ignore-classes>
+    <property name="log-file" value="${logPath}"/>
+    <property name="string-encryption" value="enable"/>
+    <property name="control-flow-obfuscation" value="enable"/>
+    <property name="classes-naming" value="iii"/>
+    <property name="methods-naming" value="iii"/>
+    <property name="fields-naming" value="iii"/>
+    <property name="line-numbers" value="remove"/>
+    <property name="generics" value="remove"/>
+    <property name="inner-classes" value="remove"/>
+</config>"""
+
         def configFile = file("build/allatori-config.xml")
-        configFile.text = configText
-
+        configFile.text = configXml
         args configFile.absolutePath
 
-        // 确保输出目录存在
         file('build/libs').mkdirs()
     }
 }
