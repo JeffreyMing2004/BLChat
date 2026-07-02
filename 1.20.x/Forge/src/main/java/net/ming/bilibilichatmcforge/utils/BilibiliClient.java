@@ -276,10 +276,15 @@ public class BilibiliClient {
 
         @Override
         public void onOpen(WebSocket webSocket) {
+            LOGGER.info("WebSocket onOpen, sending auth packet...");
             sendPacket(webSocket, 7, authBody);
+            LOGGER.info("Auth packet sent, content: {}", authBody);
+            // Request binary data reception
+            webSocket.request(1);
             SCHEDULER.scheduleAtFixedRate(() -> {
                 if (isRunning) {
                     sendPacket(webSocket, 2, "");
+                    LOGGER.debug("WebSocket heartbeat sent");
                 }
             }, 30, 30, TimeUnit.SECONDS);
             WebSocket.Listener.super.onOpen(webSocket);
@@ -287,7 +292,9 @@ public class BilibiliClient {
 
         @Override
         public CompletionStage<?> onBinary(WebSocket webSocket, ByteBuffer data, boolean last) {
+            LOGGER.debug("onBinary received {} bytes, last={}", data.remaining(), last);
             handleBinary(data);
+            webSocket.request(1);
             return WebSocket.Listener.super.onBinary(webSocket, data, last);
         }
 
@@ -338,16 +345,24 @@ public class BilibiliClient {
                 int op = data.getInt();
                 int seq = data.getInt();
 
+                LOGGER.debug("Packet: totalLen={}, headerLen={}, protoVer={}, op={}, seq={}, remaining={}",
+                        totalLen, headerLen, protoVer, op, seq, data.remaining());
+
                 int bodyLen = totalLen - headerLen;
                 if (bodyLen > 0 && data.remaining() >= bodyLen) {
                     byte[] bodyBytes = new byte[bodyLen];
                     data.get(bodyBytes);
 
-                    if (op == 5) {
+                    if (op == 3) {
+                        LOGGER.debug("Heartbeat reply received (popularity)");
+                    } else if (op == 8) {
+                        LOGGER.info("Auth success response received");
+                    } else if (op == 5) {
                         if (protoVer == 2) {
                             try {
-                                bodyBytes = decompress(bodyBytes);
-                                handleBinary(ByteBuffer.wrap(bodyBytes));
+                                byte[] decompressed = decompress(bodyBytes);
+                                LOGGER.debug("Decompressed {} bytes -> {} bytes", bodyBytes.length, decompressed.length);
+                                handleBinary(ByteBuffer.wrap(decompressed));
                                 continue;
                             } catch (Exception e) {
                                 LOGGER.error("Error decompressing packet", e);
@@ -355,16 +370,24 @@ public class BilibiliClient {
                         }
 
                         String jsonStr = new String(bodyBytes, StandardCharsets.UTF_8);
+                        LOGGER.debug("Message received: {}", jsonStr.length() > 200 ? jsonStr.substring(0, 200) + "..." : jsonStr);
                         try {
                             JsonObject json = GSON.fromJson(jsonStr, JsonObject.class);
                             String cmd = json.get("cmd").getAsString();
+                            LOGGER.debug("CMD: {}", cmd);
                             Component chatMsg = parseMessage(cmd, json);
                             if (chatMsg != null) {
+                                LOGGER.info("Displaying message: {}", chatMsg.getString());
                                 Component msg = chatMsg;
                                 server.execute(() -> server.getPlayerList().broadcastSystemMessage(msg, false));
+                            } else {
+                                LOGGER.debug("Unhandled CMD: {}", cmd);
                             }
-                        } catch (Exception ignored) {
+                        } catch (Exception e) {
+                            LOGGER.debug("Failed to parse message: {}", e.getMessage());
                         }
+                    } else {
+                        LOGGER.debug("Unknown op code: {}", op);
                     }
                 } else {
                     break;
@@ -374,6 +397,34 @@ public class BilibiliClient {
 
         private Component parseMessage(String cmd, JsonObject json) {
             switch (cmd) {
+                // 直播开放平台消息格式
+                case "LIVE_OPEN_PLATFORM_DM": {
+                    JsonObject data = json.getAsJsonObject("data");
+                    String uname = data.get("uname").getAsString();
+                    String msg = data.get("msg").getAsString();
+                    return Component.translatable("mod.bilibilichatmcforge.chat.danmaku", uname, msg);
+                }
+                case "LIVE_OPEN_PLATFORM_SEND_GIFT": {
+                    JsonObject data = json.getAsJsonObject("data");
+                    String uname = data.get("uname").getAsString();
+                    String giftName = data.get("gift_name").getAsString();
+                    int giftNum = data.get("gift_num").getAsInt();
+                    return Component.translatable("mod.bilibilichatmcforge.chat.gift", uname, giftName, giftNum);
+                }
+                case "LIVE_OPEN_PLATFORM_SUPER_CHAT": {
+                    JsonObject data = json.getAsJsonObject("data");
+                    String uname = data.get("uname").getAsString();
+                    String message = data.get("message").getAsString();
+                    long rmb = data.get("rmb").getAsLong();
+                    return Component.translatable("mod.bilibilichatmcforge.chat.sc", uname, rmb, message);
+                }
+                case "LIVE_OPEN_PLATFORM_GUARD": {
+                    JsonObject data = json.getAsJsonObject("data");
+                    String uname = data.get("uname").getAsString();
+                    String giftName = data.get("gift_name").getAsString();
+                    return Component.translatable("mod.bilibilichatmcforge.chat.guard", uname, giftName);
+                }
+                // 兼容旧格式（备用）
                 case "DANMU_MSG": {
                     JsonArray info = json.getAsJsonArray("info");
                     String msg = info.get(1).getAsString();
