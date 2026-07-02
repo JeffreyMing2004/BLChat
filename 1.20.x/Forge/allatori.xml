@@ -1,0 +1,44 @@
+<config>
+    <input>
+        <jar in="build/libs/bilibilichatmcforge-${version}.jar" out="build/libs/bilibilichatmcforge-${version}-obfuscated.jar"/>
+    </input>
+
+    <keep-names>
+        <class access="protected+">
+            <field access="protected+"/>
+            <method access="protected+"/>
+        </class>
+    </keep-names>
+
+    <!-- 不混淆主模组类（Forge需要通过注解加载） -->
+    <ignore-classes>
+        <class template="class net.ming.bilibilichatmcforge.Bilibilichatmcforge"/>
+        <class template="class net.ming.bilibilichatmcforge.Config"/>
+        <class template="class net.ming.bilibilichatmcforge.client.*"/>
+        <!-- 不混淆Minecraft/Forge相关类 -->
+        <class template="class net.minecraft.**"/>
+        <class template="class net.minecraftforge.**"/>
+        <class template="class com.mojang.**"/>
+        <class template="class cpw.**"/>
+        <class template="class org.slf4j.**"/>
+        <class template="class com.google.gson.**"/>
+    </ignore-classes>
+
+    <property name="log-file" value="build/allatori-log.xml"/>
+
+    <!-- 字符串加密 -->
+    <property name="string-encryption" value="enable"/>
+
+    <!-- 控制流混淆 -->
+    <property name="control-flow-obfuscation" value="enable"/>
+
+    <!-- 重命名 -->
+    <property name="classes-naming" value="iiii"/>
+    <property name="methods-naming" value="iiii"/>
+    <property name="fields-naming" value="iiii"/>
+
+    <!-- 移除调试信息 -->
+    <property name="remove-debug-info" value="enable"/>
+    <property name="remove-line-numbers" value="enable"/>
+    <property name="remove-local-variable-info" value="enable"/>
+</config>
