@@ -67,7 +67,7 @@ public class BilibiliClient {
     private void connect() {
         try {
             JsonConfigManager.ConfigData config = JsonConfigManager.getInstance();
-            String url = "https://open-live.bilibili.com/v2/app/start";
+            String url = "https://live-open.biliapi.com/v2/app/start";
             JsonObject body = new JsonObject();
             body.addProperty("app_id", APP_ID);
             body.addProperty("code", config.identityCode);
@@ -139,7 +139,7 @@ public class BilibiliClient {
     private void sendHeartbeat() {
         if (!isRunning || gameId == null) return;
         try {
-            String url = "https://open-live.bilibili.com/v2/app/heartbeat";
+            String url = "https://live-open.biliapi.com/v2/app/heartbeat";
             JsonObject body = new JsonObject();
             body.addProperty("game_id", gameId);
             String bodyStr = GSON.toJson(body);
@@ -157,7 +157,7 @@ public class BilibiliClient {
     }
 
     private static final String ACCESS_KEY_ID = "bq96FKKv15yroVpW1K77HRlZ";
-    private static final String ACCESS_KEY_SECRET = "5irBHscUC37KT5rq9SL0MhgKkDKks";
+    private static final String ACCESS_KEY_SECRET = "y5irBHscUC37KT5rq9SL0MhgKkDKks";
     private static final long APP_ID = 1779863002402L;
 
     private Map<String, String> getHeaders(String body) {
@@ -247,7 +247,7 @@ public class BilibiliClient {
         if (gameId != null) {
             CompletableFuture.runAsync(() -> {
                 try {
-                    String url = "https://open-live.bilibili.com/v2/app/end";
+                    String url = "https://live-open.biliapi.com/v2/app/end";
                     JsonObject body = new JsonObject();
                     body.addProperty("app_id", APP_ID);
                     body.addProperty("game_id", gameId);
