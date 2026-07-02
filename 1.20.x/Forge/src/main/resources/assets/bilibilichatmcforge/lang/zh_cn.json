@@ -11,6 +11,7 @@
   "mod.bilibilichatmcforge.chat.sc": "[B站 SC] %s (￥%d): %s",
   "mod.bilibilichatmcforge.chat.guard": "[B站 大航海] %s 开通了 %s",
   "mod.bilibilichatmcforge.error.identity_code_missing": "未配置身份码，请在配置文件或 Mod 设置中填写",
+  "mod.bilibilichatmcforge.error.app_start_failed": "连接直播间失败: %s",
   "mod.bilibilichatmcforge.error.connect_failed": "连接直播间失败: %s",
   "mod.bilibilichatmcforge.info.connected": "已成功连接到哔哩哔哩直播间"
 }

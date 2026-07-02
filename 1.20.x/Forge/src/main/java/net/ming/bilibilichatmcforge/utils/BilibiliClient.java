@@ -2,7 +2,6 @@ package net.ming.bilibilichatmcforge.utils;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import net.ming.bilibilichatmcforge.JsonConfigManager;
 import net.minecraft.network.chat.Component;
@@ -17,8 +16,8 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -31,8 +30,6 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
 public class BilibiliClient {
-    private static final String WSS_URL = "wss://broadcastlv.chat.bilibili.com/sub";
-    private static final long APP_ID = 1779863002402L;
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final Gson GSON = new Gson();
     private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder().build();
@@ -40,6 +37,7 @@ public class BilibiliClient {
 
     private WebSocket webSocket;
     private final MinecraftServer server;
+    private String gameId;
     private boolean isRunning = false;
     private java.util.concurrent.ScheduledFuture<?> heartbeatTask;
     private int reconnectAttempts = 0;
@@ -56,7 +54,7 @@ public class BilibiliClient {
 
         String identityCode = JsonConfigManager.getInstance().identityCode;
         if (identityCode == null || identityCode.isEmpty()) {
-            LOGGER.error("Bilibili room code is not configured");
+            LOGGER.error("Bilibili identity code is not configured");
             server.execute(() -> server.getPlayerList().broadcastSystemMessage(
                     Component.translatable("mod.bilibilichatmcforge.error.identity_code_missing"), false));
             isRunning = false;
@@ -66,157 +64,65 @@ public class BilibiliClient {
         CompletableFuture.runAsync(this::connect);
     }
 
-    private long resolveRoomId(String identityCode) throws Exception {
-        // 尝试直接解析为数字房间号
-        try {
-            long roomId = Long.parseLong(identityCode);
-            return resolveShortRoomId(roomId);
-        } catch (NumberFormatException ignored) {
-        }
-
-        // 非数字，作为身份码通过开放平台API获取房间号
-        return resolveRoomIdByCode(identityCode);
-    }
-
-    private long resolveShortRoomId(long roomId) throws Exception {
-        java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
-                .uri(URI.create("https://api.live.bilibili.com/room/v1/Room/get_info?room_id=" + roomId))
-                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
-                .GET()
-                .build();
-
-        java.net.http.HttpResponse<String> response = HTTP_CLIENT.send(request,
-                java.net.http.HttpResponse.BodyHandlers.ofString());
-
-        JsonObject json = GSON.fromJson(response.body(), JsonObject.class);
-        if (json.get("code").getAsInt() == 0) {
-            return json.getAsJsonObject("data").get("room_id").getAsLong();
-        }
-
-        throw new Exception("获取房间信息失败: " + json.get("message").getAsString());
-    }
-
-    private long resolveRoomIdByCode(String code) throws Exception {
-        String accessKeyId = JsonConfigManager.getInstance().accessKeyId;
-        String accessKeySecret = JsonConfigManager.getInstance().accessKeySecret;
-
-        if (accessKeyId == null || accessKeyId.isEmpty() || accessKeySecret == null || accessKeySecret.isEmpty()) {
-            throw new IllegalArgumentException(
-                    "使用身份码需要配置 accessKeyId 和 accessKeySecret。\n"
-                            + "请在B站直播开放平台(https://open-live.bilibili.com/)获取这些密钥，\n"
-                            + "或直接使用数字房间号代替身份码。");
-        }
-
-        JsonObject body = new JsonObject();
-        body.addProperty("app_id", APP_ID);
-        body.addProperty("code", code);
-        String bodyStr = GSON.toJson(body);
-
-        String bodyMd5 = md5("");
-        long timestamp = System.currentTimeMillis() / 1000;
-        String nonce = UUID.randomUUID().toString().replace("-", "");
-
-        // 构造待签名字符串
-        String stringToSign = "x-bili-accesskeyid:" + accessKeyId + "\n"
-                + "x-bili-content-md5:" + bodyMd5 + "\n"
-                + "x-bili-signature-method:HMAC-SHA256\n"
-                + "x-bili-signature-nonce:" + nonce + "\n"
-                + "x-bili-signature-version:2.0\n"
-                + "x-bili-timestamp:" + timestamp;
-
-        String signature = hmacSha256(accessKeySecret, stringToSign);
-
-        try {
-            java.net.http.HttpRequest request = java.net.http.HttpRequest.newBuilder()
-                    .uri(URI.create("https://member.bilibili.com/arcopen/fn/live/room/info"))
-                    .header("Content-Type", "application/json")
-                    .header("x-bili-accesskeyid", accessKeyId)
-                    .header("x-bili-content-md5", bodyMd5)
-                    .header("x-bili-signature-method", "HMAC-SHA256")
-                    .header("x-bili-signature-nonce", nonce)
-                    .header("x-bili-signature-version", "2.0")
-                    .header("x-bili-timestamp", String.valueOf(timestamp))
-                    .header("Authorization", signature)
-                    .GET()
-                    .build();
-
-            java.net.http.HttpResponse<String> response = HTTP_CLIENT.send(request,
-                    java.net.http.HttpResponse.BodyHandlers.ofString());
-
-            LOGGER.info("开放平台API响应: status={}, body={}", response.statusCode(), response.body());
-
-            String responseBody = response.body();
-            if (responseBody == null || responseBody.isEmpty()) {
-                throw new Exception("开放平台API返回空响应");
-            }
-
-            // 尝试解析JSON，如果不是JSON格式则返回原始内容
-            if (!responseBody.trim().startsWith("{")) {
-                throw new Exception("开放平台API返回非JSON响应: " + responseBody);
-            }
-
-            JsonObject json = GSON.fromJson(responseBody, JsonObject.class);
-            if (json.get("code").getAsInt() == 0) {
-                JsonObject data = json.getAsJsonObject("data");
-                long roomId = data.get("room_id").getAsLong();
-                LOGGER.info("通过身份码获取到房间号: {}", roomId);
-                return roomId;
-            }
-
-            throw new Exception("通过身份码获取房间号失败: " + json.get("message").getAsString());
-        } catch (java.net.ConnectException e) {
-            Throwable cause = e.getCause();
-            while (cause != null) {
-                if (cause instanceof java.nio.channels.UnresolvedAddressException) {
-                    throw new Exception("无法解析 member.bilibili.com 域名，请检查网络连接或DNS设置。");
-                }
-                cause = cause.getCause();
-            }
-            throw new Exception("连接开放平台API失败: " + e.getMessage());
-        }
-    }
-
-    private String md5(String input) throws Exception {
-        MessageDigest md = MessageDigest.getInstance("MD5");
-        byte[] digest = md.digest(input.getBytes(StandardCharsets.UTF_8));
-        StringBuilder sb = new StringBuilder();
-        for (byte b : digest) {
-            sb.append(String.format("%02x", b));
-        }
-        return sb.toString();
-    }
-
-    private String hmacSha256(String secret, String data) throws Exception {
-        Mac mac = Mac.getInstance("HmacSHA256");
-        SecretKeySpec keySpec = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
-        mac.init(keySpec);
-        byte[] digest = mac.doFinal(data.getBytes(StandardCharsets.UTF_8));
-        StringBuilder sb = new StringBuilder();
-        for (byte b : digest) {
-            sb.append(String.format("%02x", b));
-        }
-        return sb.toString();
-    }
-
     private void connect() {
         try {
-            String identityCode = JsonConfigManager.getInstance().identityCode;
-            LOGGER.info("Resolving Bilibili live room {}...", identityCode);
+            JsonConfigManager.ConfigData config = JsonConfigManager.getInstance();
+            String url = "https://live-open.biliapi.com/v2/app/start";
+            JsonObject body = new JsonObject();
+            body.addProperty("app_id", APP_ID);
+            body.addProperty("code", config.identityCode);
+            String bodyStr = GSON.toJson(body);
 
-            long roomId = resolveRoomId(identityCode);
-            LOGGER.info("Resolved to room ID: {}", roomId);
+            Map<String, String> headers = getHeaders(bodyStr);
+            java.net.http.HttpRequest.Builder requestBuilder = java.net.http.HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .POST(java.net.http.HttpRequest.BodyPublishers.ofString(bodyStr));
 
+            headers.forEach(requestBuilder::header);
+
+            java.net.http.HttpResponse<String> response = HTTP_CLIENT.send(requestBuilder.build(),
+                    java.net.http.HttpResponse.BodyHandlers.ofString());
+            LOGGER.debug("HTTP Response Code: {}", response.statusCode());
+            LOGGER.debug("HTTP Response Body: {}", response.body());
+            JsonObject respJson = GSON.fromJson(response.body(), JsonObject.class);
+
+            if (respJson.get("code").getAsInt() != 0) {
+                String errorMsg = respJson.get("message").getAsString();
+                LOGGER.error("Failed to start Bilibili app: {}", errorMsg);
+                server.execute(() -> server.getPlayerList().broadcastSystemMessage(
+                        Component.translatable("mod.bilibilichatmcforge.error.app_start_failed", errorMsg), false));
+                isRunning = false;
+                return;
+            }
+
+            JsonObject data = respJson.getAsJsonObject("data");
+            gameId = data.get("game_info").getAsJsonObject().get("game_id").getAsString();
+
+            // Start Project Heartbeat (v2/app/heartbeat) - every 20 seconds
+            if (heartbeatTask != null) heartbeatTask.cancel(true);
+            heartbeatTask = SCHEDULER.scheduleAtFixedRate(this::sendHeartbeat, 20, 20, TimeUnit.SECONDS);
+
+            JsonObject websocketInfo = data.getAsJsonObject("websocket_info");
+            String authBody = websocketInfo.get("auth_body").getAsString();
+            List<String> wssLinks = GSON.fromJson(websocketInfo.get("wss_link"), List.class);
+
+            if (wssLinks.isEmpty()) {
+                LOGGER.error("No WSS links provided by Bilibili.");
+                isRunning = false;
+                return;
+            }
+
+            String wssUrl = wssLinks.get(0);
             HTTP_CLIENT.newWebSocketBuilder()
-                    .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
-                    .header("Origin", "https://live.bilibili.com")
-                    .buildAsync(URI.create(WSS_URL), new BilibiliWebSocketListener(roomId))
+                    .buildAsync(URI.create(wssUrl), new BilibiliWebSocketListener(authBody))
                     .thenAccept(ws -> {
                         this.webSocket = ws;
                         reconnectAttempts = 0;
-                        LOGGER.info("Connected to Bilibili WebSocket for room {}", roomId);
+                        LOGGER.info("Connected to Bilibili WebSocket");
                         server.execute(() -> server.getPlayerList().broadcastSystemMessage(
                                 Component.translatable("mod.bilibilichatmcforge.info.connected"), false));
                     });
+
         } catch (Exception e) {
             LOGGER.error("Error connecting to Bilibili", e);
             String errorMsg = e.getMessage();
@@ -227,6 +133,102 @@ public class BilibiliClient {
             server.execute(() -> server.getPlayerList().broadcastSystemMessage(
                     Component.translatable("mod.bilibilichatmcforge.error.connect_failed", finalErrorMsg), false));
             isRunning = false;
+        }
+    }
+
+    private void sendHeartbeat() {
+        if (!isRunning || gameId == null) return;
+        try {
+            String url = "https://live-open.biliapi.com/v2/app/heartbeat";
+            JsonObject body = new JsonObject();
+            body.addProperty("game_id", gameId);
+            String bodyStr = GSON.toJson(body);
+
+            Map<String, String> headers = getHeaders(bodyStr);
+            java.net.http.HttpRequest.Builder requestBuilder = java.net.http.HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .POST(java.net.http.HttpRequest.BodyPublishers.ofString(bodyStr));
+
+            headers.forEach(requestBuilder::header);
+            HTTP_CLIENT.sendAsync(requestBuilder.build(), java.net.http.HttpResponse.BodyHandlers.ofString());
+        } catch (Exception e) {
+            LOGGER.error("Error sending Bilibili heartbeat", e);
+        }
+    }
+
+    private static final String ACCESS_KEY_ID = "bq96FKKv15yroVpW1K77HRlZ";
+    private static final String ACCESS_KEY_SECRET = "5irBHscUC37KT5rq9SL0MhgKkDKks";
+    private static final long APP_ID = 1779863002402L;
+
+    private Map<String, String> getHeaders(String body) {
+        String timestamp = String.valueOf(System.currentTimeMillis() / 1000);
+        String nonce = UUID.randomUUID().toString();
+        String contentMd5 = md5(body);
+
+        LOGGER.debug("Signing body: {}", body);
+        LOGGER.debug("Content-MD5: {}", contentMd5);
+
+        Map<String, String> headerMap = new java.util.TreeMap<>();
+        headerMap.put("x-bili-accesskeyid", ACCESS_KEY_ID);
+        headerMap.put("x-bili-content-md5", contentMd5);
+        headerMap.put("x-bili-signature-method", "HMAC-SHA256");
+        headerMap.put("x-bili-signature-nonce", nonce);
+        headerMap.put("x-bili-signature-version", "2.0");
+        headerMap.put("x-bili-timestamp", timestamp);
+
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<String, String> entry : headerMap.entrySet()) {
+            if (sb.length() > 0) {
+                sb.append("\n");
+            }
+            sb.append(entry.getKey()).append(":").append(entry.getValue());
+        }
+
+        String stringToSign = sb.toString();
+        LOGGER.debug("String to sign:\n{}", stringToSign);
+
+        String signature = hmacSha256(ACCESS_KEY_SECRET, stringToSign);
+        LOGGER.debug("Signature: {}", signature);
+
+        headerMap.put("Authorization", signature);
+        headerMap.put("Content-Type", "application/json");
+        headerMap.put("Accept", "application/json");
+        headerMap.put("x-bili-version", "v2");
+
+        return headerMap;
+    }
+
+    private String md5(String input) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            byte[] messageDigest = md.digest(input.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : messageDigest) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
+            }
+            return hexString.toString();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private String hmacSha256(String secret, String data) {
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256");
+            SecretKeySpec keySpec = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+            mac.init(keySpec);
+            byte[] bytes = mac.doFinal(data.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : bytes) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
+            }
+            return hexString.toString();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -242,32 +244,45 @@ public class BilibiliClient {
         if (webSocket != null) {
             webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "Stopping");
         }
+
+        if (gameId != null) {
+            CompletableFuture.runAsync(() -> {
+                try {
+                    String url = "https://live-open.biliapi.com/v2/app/end";
+                    JsonObject body = new JsonObject();
+                    body.addProperty("app_id", APP_ID);
+                    body.addProperty("game_id", gameId);
+                    String bodyStr = GSON.toJson(body);
+
+                    Map<String, String> headers = getHeaders(bodyStr);
+                    java.net.http.HttpRequest.Builder requestBuilder = java.net.http.HttpRequest.newBuilder()
+                            .uri(URI.create(url))
+                            .POST(java.net.http.HttpRequest.BodyPublishers.ofString(bodyStr));
+
+                    headers.forEach(requestBuilder::header);
+                    HTTP_CLIENT.send(requestBuilder.build(), java.net.http.HttpResponse.BodyHandlers.ofString());
+                } catch (Exception e) {
+                    LOGGER.error("Error ending Bilibili app", e);
+                }
+            });
+        }
     }
 
     private class BilibiliWebSocketListener implements WebSocket.Listener {
-        private final long roomId;
+        private final String authBody;
 
-        public BilibiliWebSocketListener(long roomId) {
-            this.roomId = roomId;
+        public BilibiliWebSocketListener(String authBody) {
+            this.authBody = authBody;
         }
 
         @Override
         public void onOpen(WebSocket webSocket) {
-            JsonObject authBody = new JsonObject();
-            authBody.addProperty("uid", 0);
-            authBody.addProperty("roomid", roomId);
-            authBody.addProperty("protover", 3);
-            authBody.addProperty("platform", "web");
-            authBody.addProperty("type", 2);
-            sendPacket(webSocket, 7, GSON.toJson(authBody));
-
-            if (heartbeatTask != null) heartbeatTask.cancel(true);
-            heartbeatTask = SCHEDULER.scheduleAtFixedRate(() -> {
-                if (isRunning && webSocket != null) {
+            sendPacket(webSocket, 7, authBody);
+            SCHEDULER.scheduleAtFixedRate(() -> {
+                if (isRunning) {
                     sendPacket(webSocket, 2, "");
                 }
             }, 30, 30, TimeUnit.SECONDS);
-
             WebSocket.Listener.super.onOpen(webSocket);
         }
 
