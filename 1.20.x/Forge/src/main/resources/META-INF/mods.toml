@@ -4,7 +4,7 @@ license = "${mod_license}"
 
 [[mods]]
 modId = "${mod_id}"
-version = "1.0.2"
+version = "${mod_version}"
 displayName = "BLChat"
 displayURL = "https://github.com/JeffreyMing2004"
 authors = "${mod_authors}"

@@ -79,3 +79,37 @@ tasks.named('jar', Jar).configure {
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }
+
+// Allatori 混淆任务
+configurations {
+    allatori
+}
+
+dependencies {
+    allatori files('libs/allatori.jar')
+}
+
+tasks.register('obfuscate', JavaExec) {
+    dependsOn 'jar'
+    group = 'obfuscation'
+    description = 'Obfuscates the mod jar with Allatori'
+
+    classpath = configurations.allatori
+    mainClass = 'com.allatori.Obfuscate'
+
+    doFirst {
+        def jarFile = jar.archiveFile.get().asFile
+        def outputFile = file("build/libs/${jar.archiveBaseName.get()}-${jar.archiveVersion.get()}-obfuscated.jar")
+
+        // 生成 Allatori 配置，替换变量
+        def configText = file('allatori.xml').text
+        configText = configText.replace('${version}', jar.archiveVersion.get())
+        def configFile = file("build/allatori-config.xml")
+        configFile.text = configText
+
+        args configFile.absolutePath
+
+        // 确保输出目录存在
+        file('build/libs').mkdirs()
+    }
+}

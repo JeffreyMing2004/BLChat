@@ -13,7 +13,11 @@ proguard-rules.pro
 proguard.pro
 proguard.zip
 
-#doc
+# Allatori
+allatori.zip
+allatori-temp/
+
+##doc
 CHANGELOG.md
 
 # IDE
