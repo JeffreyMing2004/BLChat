@@ -28,7 +28,7 @@ public class BilibiliConfigScreen extends Screen {
         // Identity Code field
         this.identityCodeField = new EditBox(this.font, fieldX, 60, fieldWidth, 20, Component.empty());
         this.identityCodeField.setValue(config.identityCode);
-        this.identityCodeField.setMaxLength(32);
+        this.identityCodeField.setMaxLength(64);
         this.identityCodeField.setHint(Component.translatable("mod.bilibilichatmcforge.config.identity_code.hint"));
         this.addRenderableWidget(this.identityCodeField);
 

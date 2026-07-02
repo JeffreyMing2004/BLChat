@@ -21,8 +21,6 @@ public class JsonConfigManager {
 
     public static class ConfigData {
         public String identityCode = "";
-        public String accessKeyId = "";
-        public String accessKeySecret = "";
     }
 
     public static void load() {
