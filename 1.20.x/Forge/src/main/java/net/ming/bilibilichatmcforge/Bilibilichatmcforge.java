@@ -29,7 +29,8 @@ public class Bilibilichatmcforge {
         }
     }
 
-    public Bilibilichatmcforge(FMLJavaModLoadingContext context) {
+    public Bilibilichatmcforge() {
+        FMLJavaModLoadingContext context = FMLJavaModLoadingContext.get();
         JsonConfigManager.load();
         MinecraftForge.EVENT_BUS.register(this);
         MinecraftForge.EVENT_BUS.addListener(this::onRegisterCommands);

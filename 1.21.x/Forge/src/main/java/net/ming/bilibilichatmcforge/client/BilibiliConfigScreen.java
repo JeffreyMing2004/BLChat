@@ -48,8 +48,8 @@ public class BilibiliConfigScreen extends Screen {
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         super.render(guiGraphics, mouseX, mouseY, partialTick);
-        guiGraphics.drawCenteredString(this.font, this.title.getString(), this.width / 2, 10, 0xFFFFFF);
-        guiGraphics.drawString(this.font, Component.translatable("mod.bilibilichatmcforge.config.identity_code").getString(), this.width / 2 - 130, 48, 0xA0A0A0);
+        guiGraphics.drawCenteredString(this.font, this.title.getString(), this.width / 2, 10, 0xFFFFFFFF);
+        guiGraphics.drawString(this.font, Component.translatable("mod.bilibilichatmcforge.config.identity_code").getString(), this.width / 2 - 130, 48, 0xFFA0A0A0);
     }
 
     @Override
