@@ -67,7 +67,7 @@ public class BilibiliClient {
     private void connect() {
         try {
             JsonConfigManager.ConfigData config = JsonConfigManager.getInstance();
-            String url = "https://live-open.biliapi.com/v2/app/start";
+            String url = "https://open-live.bilibili.com/v2/app/start";
             JsonObject body = new JsonObject();
             body.addProperty("app_id", APP_ID);
             body.addProperty("code", config.identityCode);
@@ -139,7 +139,7 @@ public class BilibiliClient {
     private void sendHeartbeat() {
         if (!isRunning || gameId == null) return;
         try {
-            String url = "https://live-open.biliapi.com/v2/app/heartbeat";
+            String url = "https://open-live.bilibili.com/v2/app/heartbeat";
             JsonObject body = new JsonObject();
             body.addProperty("game_id", gameId);
             String bodyStr = GSON.toJson(body);
@@ -173,7 +173,7 @@ public class BilibiliClient {
         headerMap.put("x-bili-content-md5", contentMd5);
         headerMap.put("x-bili-signature-method", "HMAC-SHA256");
         headerMap.put("x-bili-signature-nonce", nonce);
-        headerMap.put("x-bili-signature-version", "2.0");
+        headerMap.put("x-bili-signature-version", "1.0");
         headerMap.put("x-bili-timestamp", timestamp);
 
         StringBuilder sb = new StringBuilder();
@@ -193,7 +193,6 @@ public class BilibiliClient {
         headerMap.put("Authorization", signature);
         headerMap.put("Content-Type", "application/json");
         headerMap.put("Accept", "application/json");
-        headerMap.put("x-bili-version", "v2");
 
         return headerMap;
     }
@@ -248,7 +247,7 @@ public class BilibiliClient {
         if (gameId != null) {
             CompletableFuture.runAsync(() -> {
                 try {
-                    String url = "https://live-open.biliapi.com/v2/app/end";
+                    String url = "https://open-live.bilibili.com/v2/app/end";
                     JsonObject body = new JsonObject();
                     body.addProperty("app_id", APP_ID);
                     body.addProperty("game_id", gameId);
