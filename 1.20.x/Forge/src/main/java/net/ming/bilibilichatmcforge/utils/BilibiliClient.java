@@ -397,13 +397,16 @@ public class BilibiliClient {
 
         private Component parseMessage(String cmd, JsonObject json) {
             switch (cmd) {
-                // 直播开放平台消息格式
+                // 直播开放平台弹幕（新旧CMD兼容）
+                case "OPEN_LIVEROOM_DM":
                 case "LIVE_OPEN_PLATFORM_DM": {
                     JsonObject data = json.getAsJsonObject("data");
                     String uname = data.get("uname").getAsString();
                     String msg = data.get("msg").getAsString();
                     return Component.translatable("mod.bilibilichatmcforge.chat.danmaku", uname, msg);
                 }
+                // 直播开放平台礼物
+                case "OPEN_LIVEROOM_SEND_GIFT":
                 case "LIVE_OPEN_PLATFORM_SEND_GIFT": {
                     JsonObject data = json.getAsJsonObject("data");
                     String uname = data.get("uname").getAsString();
@@ -411,6 +414,8 @@ public class BilibiliClient {
                     int giftNum = data.get("gift_num").getAsInt();
                     return Component.translatable("mod.bilibilichatmcforge.chat.gift", uname, giftName, giftNum);
                 }
+                // 直播开放平台付费留言
+                case "OPEN_LIVEROOM_SUPER_CHAT":
                 case "LIVE_OPEN_PLATFORM_SUPER_CHAT": {
                     JsonObject data = json.getAsJsonObject("data");
                     String uname = data.get("uname").getAsString();
@@ -418,13 +423,23 @@ public class BilibiliClient {
                     long rmb = data.get("rmb").getAsLong();
                     return Component.translatable("mod.bilibilichatmcforge.chat.sc", uname, rmb, message);
                 }
+                // 直播开放平台大航海（注意：uname在user_info中，无gift_name字段）
+                case "OPEN_LIVEROOM_GUARD":
                 case "LIVE_OPEN_PLATFORM_GUARD": {
                     JsonObject data = json.getAsJsonObject("data");
-                    String uname = data.get("uname").getAsString();
-                    String giftName = data.get("gift_name").getAsString();
-                    return Component.translatable("mod.bilibilichatmcforge.chat.guard", uname, giftName);
+                    JsonObject userInfo = data.getAsJsonObject("user_info");
+                    String uname = userInfo.get("uname").getAsString();
+                    int guardLevel = data.get("guard_level").getAsInt();
+                    String guardName;
+                    switch (guardLevel) {
+                        case 1: guardName = "总督"; break;
+                        case 2: guardName = "提督"; break;
+                        case 3: guardName = "舰长"; break;
+                        default: guardName = "大航海"; break;
+                    }
+                    return Component.translatable("mod.bilibilichatmcforge.chat.guard", uname, guardName);
                 }
-                // 兼容旧格式（备用）
+                // 兼容旧版弹幕格式
                 case "DANMU_MSG": {
                     JsonArray info = json.getAsJsonArray("info");
                     String msg = info.get(1).getAsString();
