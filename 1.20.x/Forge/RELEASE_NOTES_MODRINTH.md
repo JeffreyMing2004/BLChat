@@ -2,8 +2,8 @@
 
 ### B站直播开放平台正式版适配 / Bilibili Live Open Platform Official API Integration
 
-全面适配B站直播开放平台正式版API，使用Allatori v9.8代码混淆保护。
-Fully integrates with the Bilibili Live Open Platform official API, with Allatori v9.8 code obfuscation protection.
+全面适配B站直播开放平台正式版API。
+Fully integrates with the Bilibili Live Open Platform official API.
 
 ---
 
@@ -46,7 +46,7 @@ Fully integrates with the Bilibili Live Open Platform official API, with Allator
 
 ### 环境要求 / Requirements
 
-- Minecraft 1.20.1-1.20.6
+- Minecraft 1.20 - 1.20.6 (全版本 / All versions)
 - Forge 47.x - 50.x
 - Java 17+
 

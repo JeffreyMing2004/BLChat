@@ -63,7 +63,7 @@ This version fully integrates with the Bilibili Live Open Platform official API,
 - **身份码 / Identity Code** - 在B站直播开放平台获取的主播身份码
   The streamer's Identity Code obtained from the Bilibili Live Open Platform
 - Forge版本要求 / Forge Version: 47.x - 50.x
-- Minecraft版本 / Minecraft Version: 1.20.1
+- Minecraft版本 / Minecraft Version: 1.20 - 1.20.6 (全版本)
 
 ---
 
