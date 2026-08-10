@@ -47,8 +47,7 @@ public class BilibiliConfigScreen extends Screen {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        // 1.21.x: renderBackground 需要 4 个参数 (GuiGraphics, int, int, float)
-        this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
+        // 1.21.x: renderBackground 已由 renderWithTooltipAndSubtitles 自动调用，无需手动调用
         // 1.21.x 颜色为严格 ARGB，需 0xFF 前缀保证不透明
         guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, 10, 0xFFFFFFFF);
         guiGraphics.drawString(this.font, Component.translatable("mod.bilibilichatmcforge.config.identity_code"), this.width / 2 - 130, 48, 0xFFA0A0A0);
