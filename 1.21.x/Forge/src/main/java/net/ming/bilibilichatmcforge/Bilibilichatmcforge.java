@@ -2,9 +2,12 @@ package net.ming.bilibilichatmcforge;
 
 import com.mojang.logging.LogUtils;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.event.server.ServerStoppingEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.eventbus.api.listener.SubscribeEvent;
+import net.minecraft.server.permissions.Permission;
+import net.minecraft.server.permissions.PermissionLevel;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
@@ -31,7 +34,6 @@ public class Bilibilichatmcforge {
     public Bilibilichatmcforge() {
         JsonConfigManager.load();
         MinecraftForge.EVENT_BUS.register(this);
-        MinecraftForge.EVENT_BUS.addListener(this::onRegisterCommands);
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, Config.SPEC);
         ModLoadingContext.get().registerExtensionPoint(ConfigScreenHandler.ConfigScreenFactory.class,
                 () -> new ConfigScreenHandler.ConfigScreenFactory((mc, lastScreen) -> new BilibiliConfigScreen(lastScreen)));
@@ -39,10 +41,11 @@ public class Bilibilichatmcforge {
         LOGGER.info("BLChat mod loaded successfully!");
     }
 
-    private void onRegisterCommands(net.minecraftforge.event.RegisterCommandsEvent event) {
+    @SubscribeEvent
+    public void onRegisterCommands(RegisterCommandsEvent event) {
         event.getDispatcher().register(
                 net.minecraft.commands.Commands.literal("bilibili")
-                        .requires(source -> source.hasPermission(2))
+                        .requires(source -> source.permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.GAMEMASTERS)))
                         .then(net.minecraft.commands.Commands.literal("identitycode")
                                 .then(net.minecraft.commands.Commands.argument("id", com.mojang.brigadier.arguments.StringArgumentType.string())
                                         .executes(context -> {
