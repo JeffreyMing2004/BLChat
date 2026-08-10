@@ -6,8 +6,6 @@ import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.event.server.ServerStoppingEvent;
 import net.minecraftforge.eventbus.api.listener.SubscribeEvent;
-import net.minecraft.server.permissions.Permission;
-import net.minecraft.server.permissions.PermissionLevel;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
@@ -45,7 +43,7 @@ public class Bilibilichatmcforge {
     public void onRegisterCommands(RegisterCommandsEvent event) {
         event.getDispatcher().register(
                 net.minecraft.commands.Commands.literal("bilibili")
-                        .requires(source -> source.permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.GAMEMASTERS)))
+                        .requires(source -> source.hasPermission(2))
                         .then(net.minecraft.commands.Commands.literal("identitycode")
                                 .then(net.minecraft.commands.Commands.argument("id", com.mojang.brigadier.arguments.StringArgumentType.string())
                                         .executes(context -> {
