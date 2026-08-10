@@ -28,7 +28,7 @@ public class BilibiliConfigScreen extends Screen {
         // Identity Code field
         this.identityCodeField = new EditBox(this.font, fieldX, 60, fieldWidth, 20, Component.empty());
         this.identityCodeField.setValue(config.identityCode);
-        this.identityCodeField.setMaxLength(32);
+        this.identityCodeField.setMaxLength(64);
         this.identityCodeField.setHint(Component.translatable("mod.bilibilichatmcforge.config.identity_code.hint"));
         this.addRenderableWidget(this.identityCodeField);
 
@@ -47,9 +47,12 @@ public class BilibiliConfigScreen extends Screen {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+        // 1.21.x: renderBackground 需要 4 个参数 (GuiGraphics, int, int, float)
+        this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
+        // 1.21.x 颜色为严格 ARGB，需 0xFF 前缀保证不透明
+        guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, 10, 0xFFFFFFFF);
+        guiGraphics.drawString(this.font, Component.translatable("mod.bilibilichatmcforge.config.identity_code"), this.width / 2 - 130, 48, 0xFFA0A0A0);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
-        guiGraphics.drawCenteredString(this.font, this.title.getString(), this.width / 2, 10, 0xFFFFFFFF);
-        guiGraphics.drawString(this.font, Component.translatable("mod.bilibilichatmcforge.config.identity_code").getString(), this.width / 2 - 130, 48, 0xFFA0A0A0);
     }
 
     @Override
