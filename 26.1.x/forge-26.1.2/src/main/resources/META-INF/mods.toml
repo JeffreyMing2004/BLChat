@@ -1,5 +1,5 @@
 modLoader="javafml"
-loaderVersion="[62,)"
+loaderVersion="[64,)"
 license="All Rights Reserved"
 
 [[mods]]
@@ -14,13 +14,13 @@ clientSideOnly=true
 [[dependencies.bilibilichatmcforge]]
     modId="forge"
     mandatory=true
-    versionRange="[62,)"
+    versionRange="[64,)"
     ordering="NONE"
     side="BOTH"
 
 [[dependencies.bilibilichatmcforge]]
     modId="minecraft"
     mandatory=true
-    versionRange="[26.1,26.1.1,)"
+    versionRange="[26.1.2,26.2,)"
     ordering="NONE"
     side="BOTH"

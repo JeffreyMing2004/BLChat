@@ -149,7 +149,9 @@ npm start
 | 1.21.2 ~ 1.21.5 | `bilibilichatmcforge-1.21.2-1.21.5-*.jar` |
 | 1.21.6 ~ 1.21.10 | `bilibilichatmcforge-1.21.6-1.21.10-*.jar` |
 | 1.21.11 | `bilibilichatmcforge-1.21.11-*.jar` |
-| 26.1.x | `bilibilichatmcforge-26.1-*.jar` |
+| 26.1 | `bilibilichatmcforge-26.1-*.jar` |
+| 26.1.1 | `bilibilichatmcforge-26.1.1-*.jar` |
+| 26.1.2 | `bilibilichatmcforge-26.1.2-*.jar` |
 
 > **注意**：MC 1.20.5 无 Forge 版本，使用 1.20.6 jar 即可。
 > **Note**: MC 1.20.5 has no Forge build, use the 1.20.6 jar instead.
@@ -234,9 +236,11 @@ BLChat/
 │   ├── forge-1.21.6/             # Jar: 1.21.6~1.21.10 (Forge 56~60, Java 21)
 │   ├── forge-1.21.11/            # Jar: 1.21.11 (Forge 61, Java 21)
 │   └── build-all.bat             # 一键构建 / One-click build
-├── 26.1.x/                       # MC 26.1.x / For Minecraft 26.1.x
+├── 26.1.x/                       # MC 26.1~26.1.2 / For Minecraft 26.1~26.1.2
 │   ├── shared/                   # 共享源码 / Shared source code
-│   ├── forge-26.1/               # Jar: 26.1.x (Forge 64, Java 25)
+│   ├── forge-26.1/               # Jar: 26.1 (Forge 62, Java 25)
+│   ├── forge-26.1.1/             # Jar: 26.1.1 (Forge 63, Java 25)
+│   ├── forge-26.1.2/             # Jar: 26.1.2 (Forge 64, Java 25)
 │   └── build-all.bat             # 一键构建 / One-click build
 ├── build.gradle                  # Forge 构建配置 (1.20.1 legacy) / Forge build config (1.20.1 legacy)
 ├── gradle.properties             # 模组版本与元数据 / Mod version & metadata
