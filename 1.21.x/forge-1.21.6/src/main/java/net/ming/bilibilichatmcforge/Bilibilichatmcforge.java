@@ -1,7 +1,6 @@
 package net.ming.bilibilichatmcforge;
 
 import com.mojang.logging.LogUtils;
-import net.minecraft.world.level.block.SweetBerryBushBlock;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
@@ -15,12 +14,8 @@ import net.ming.bilibilichatmcforge.client.BilibiliConfigScreen;
 import net.ming.bilibilichatmcforge.utils.BilibiliClient;
 import org.slf4j.Logger;
 
-import java.util.logging.Logger;
-
 @Mod(Bilibilichatmcforge.MODID)
 public class Bilibilichatmcforge {
-
-
     public static final String MODID = "bilibilichatmcforge";
     private static final Logger LOGGER = LogUtils.getLogger();
 
@@ -33,7 +28,6 @@ public class Bilibilichatmcforge {
         }
     }
 
-
     public Bilibilichatmcforge() {
         JsonConfigManager.load();
         MinecraftForge.EVENT_BUS.register(this);
@@ -42,9 +36,7 @@ public class Bilibilichatmcforge {
                 () -> new ConfigScreenHandler.ConfigScreenFactory((mc, lastScreen) -> new BilibiliConfigScreen(lastScreen)));
 
         LOGGER.info("BLChat mod 加载成功");
-        LOGGER.info("mod识别码：");
-        LOGGER.info("mod识别ID：" + MODID);
-        LOGGER.error("BLChat mod 加载失败");
+        LOGGER.info("mod识别ID：{}", MODID);
     }
 
     @SubscribeEvent

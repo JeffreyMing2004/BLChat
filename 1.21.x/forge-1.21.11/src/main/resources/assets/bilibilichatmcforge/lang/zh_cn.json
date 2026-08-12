@@ -1,0 +1,16 @@
+{
+  "mod.bilibilichatmcforge.config.title": "BLChat 配置",
+  "mod.bilibilichatmcforge.config.identity_code": "身份码",
+  "mod.bilibilichatmcforge.config.identity_code.hint": "输入 B 站直播间身份码",
+  "mod.bilibilichatmcforge.config.save": "保存并应用",
+  "mod.bilibilichatmcforge.config.cancel": "取消",
+  "mod.bilibilichatmcforge.chat.restarting": "正在重新连接到哔哩哔哩直播间...",
+  "mod.bilibilichatmcforge.chat.identity_code_updated": "身份码已更新: %s",
+  "mod.bilibilichatmcforge.chat.danmaku": "[B站 弹幕] %s: %s",
+  "mod.bilibilichatmcforge.chat.gift": "[B站 礼物] %s 赠送了 %s x%d",
+  "mod.bilibilichatmcforge.chat.sc": "[B站 SC] %s (￥%d): %s",
+  "mod.bilibilichatmcforge.chat.guard": "[B站 大航海] %s 开通了 %s",
+  "mod.bilibilichatmcforge.error.identity_code_missing": "未配置身份码，请在配置文件或 Mod 设置中填写",
+  "mod.bilibilichatmcforge.error.connect_failed": "连接直播间失败: %s",
+  "mod.bilibilichatmcforge.info.connected": "已成功连接到哔哩哔哩直播间"
+}

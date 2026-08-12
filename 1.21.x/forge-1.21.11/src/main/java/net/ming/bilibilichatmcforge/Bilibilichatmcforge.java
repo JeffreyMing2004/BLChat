@@ -1,7 +1,6 @@
 package net.ming.bilibilichatmcforge;
 
 import com.mojang.logging.LogUtils;
-import net.minecraft.world.level.block.SweetBerryBushBlock;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
@@ -13,14 +12,11 @@ import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.client.ConfigScreenHandler;
 import net.ming.bilibilichatmcforge.client.BilibiliConfigScreen;
 import net.ming.bilibilichatmcforge.utils.BilibiliClient;
+import net.ming.bilibilichatmcforge.utils.VersionCompat;
 import org.slf4j.Logger;
-
-import java.util.logging.Logger;
 
 @Mod(Bilibilichatmcforge.MODID)
 public class Bilibilichatmcforge {
-
-
     public static final String MODID = "bilibilichatmcforge";
     private static final Logger LOGGER = LogUtils.getLogger();
 
@@ -33,7 +29,6 @@ public class Bilibilichatmcforge {
         }
     }
 
-
     public Bilibilichatmcforge() {
         JsonConfigManager.load();
         MinecraftForge.EVENT_BUS.register(this);
@@ -42,16 +37,14 @@ public class Bilibilichatmcforge {
                 () -> new ConfigScreenHandler.ConfigScreenFactory((mc, lastScreen) -> new BilibiliConfigScreen(lastScreen)));
 
         LOGGER.info("BLChat mod 加载成功");
-        LOGGER.info("mod识别码：");
-        LOGGER.info("mod识别ID：" + MODID);
-        LOGGER.error("BLChat mod 加载失败");
+        LOGGER.info("mod识别ID：{}", MODID);
     }
 
     @SubscribeEvent
     public void onRegisterCommands(RegisterCommandsEvent event) {
         event.getDispatcher().register(
                 net.minecraft.commands.Commands.literal("bilibili")
-                        .requires(source -> source.hasPermission(2))
+                        .requires(source -> VersionCompat.checkPermission(source, 2))
                         .then(net.minecraft.commands.Commands.literal("identitycode")
                                 .then(net.minecraft.commands.Commands.argument("id", com.mojang.brigadier.arguments.StringArgumentType.string())
                                         .executes(context -> {

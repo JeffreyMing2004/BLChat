@@ -1,0 +1,10 @@
+{
+  "pack": {
+    "description": "Bilibili Chat Mod for Minecraft",
+    "pack_format": 22,
+    "supported_formats": {
+      "min_format": 22,
+      "max_format": 99
+    }
+  }
+}
