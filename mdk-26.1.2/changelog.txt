@@ -1,0 +1,13 @@
+26.1.2 Changelog
+64.0
+====
+ - 64.0.8 Fix misaligned ClientLevel load patch
+ - 64.0.7 Fix IForgeBlockStateModel#getModelData is never called Fixes #10817
+ - 64.0.6 Fix base bucket model not being flipped for gasses. Closes #10814
+ - 64.0.5 Fix being considered in water when not. Closes #10813
+ - 64.0.4 Add `c:bars/copper` and `c:bars/iron` tags (#10810)
+ - 64.0.3 Add `c:foods/dough` tag (#10811)
+ - 64.0.2 Add `c:drink_containing/bottle` and `c:drink_containing/bucket` (#10812)
+ - 64.0.1 Copy fluid and lava still textures to Item atlas for DynamicFluidContainerModel. Fixes #10809
+ - 64.0.0 26.1.2
+
