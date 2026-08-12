@@ -2,8 +2,8 @@
 
 <div align="center">
 
-![Minecraft](https://img.shields.io/badge/Minecraft-1.20~1.21.11-green)
-![Java](https://img.shields.io/badge/Java-17_/_21-orange)
+![Minecraft](https://img.shields.io/badge/Minecraft-1.20~26.1-green)
+![Java](https://img.shields.io/badge/Java-17_/_21_/_25-orange)
 ![Node.js](https://img.shields.io/badge/Node.js-18+-brightgreen)
 ![Bilibili](https://img.shields.io/badge/Bilibili-Live-blue)
 ![License](https://img.shields.io/badge/License-All_Rights_Reserved-yellow)
@@ -56,11 +56,11 @@ BLChat is a complete Bilibili live danmaku integration for Minecraft, consisting
 
 ### 前置条件 / Prerequisites
 
-- **MC 模组**：Java 17（1.20.x）或 Java 21（1.21.x）、Minecraft 1.20~1.21.11 + Forge 46~61
+- **MC 模组**：Java 17（1.20.x）/ Java 21（1.21.x）/ Java 25（26.1.x）、Minecraft 1.20~26.1 + Forge 46~64
 - **H5 插件**：Node.js 18+（独立仓库 / Separate repo）
 - **B 站开放平台**：H5 面板部署需 Access Key、Access Secret、App ID；MC 模组仅需主播身份码（凭据已内置）
 
-MC Mod: Java 17 (1.20.x) or Java 21 (1.21.x), Minecraft 1.20~1.21.11 + Forge 46~61
+MC Mod: Java 17 (1.20.x) / Java 21 (1.21.x) / Java 25 (26.1.x), Minecraft 1.20~26.1 + Forge 46~64
 H5 Plugin: Node.js 18+ (separate repo)
 Bilibili Open Platform: H5 panel requires Access Key, Access Secret, App ID; MC mod only needs streamer identity code (credentials built-in)
 
@@ -149,6 +149,7 @@ npm start
 | 1.21.2 ~ 1.21.5 | `bilibilichatmcforge-1.21.2-1.21.5-*.jar` |
 | 1.21.6 ~ 1.21.10 | `bilibilichatmcforge-1.21.6-1.21.10-*.jar` |
 | 1.21.11 | `bilibilichatmcforge-1.21.11-*.jar` |
+| 26.1.x | `bilibilichatmcforge-26.1-*.jar` |
 
 > **注意**：MC 1.20.5 无 Forge 版本，使用 1.20.6 jar 即可。
 > **Note**: MC 1.20.5 has no Forge build, use the 1.20.6 jar instead.
@@ -209,7 +210,7 @@ Stream starts → Get identity code → Verify in H5 panel → Get OBS URL
 
 | 层 / Layer | 技术 / Technology |
 |----|------|
-| MC 模组 | Java 17 / 21 · Minecraft Forge 46~61 · 多 jar 架构 / Multi-jar architecture |
+| MC 模组 | Java 17 / 21 / 25 · Minecraft Forge 46~64 · 多 jar 架构 / Multi-jar architecture |
 | 前端 / Frontend | Vue 3 · Vite 5 |
 | 后端 / Backend | Node.js · Express · WebSocket |
 | 存储 / Storage | SQLite（sql.js） |
@@ -232,6 +233,10 @@ BLChat/
 │   ├── forge-1.21.2/             # Jar: 1.21.2~1.21.5 (Forge 53~55, Java 21)
 │   ├── forge-1.21.6/             # Jar: 1.21.6~1.21.10 (Forge 56~60, Java 21)
 │   ├── forge-1.21.11/            # Jar: 1.21.11 (Forge 61, Java 21)
+│   └── build-all.bat             # 一键构建 / One-click build
+├── 26.1.x/                       # MC 26.1.x / For Minecraft 26.1.x
+│   ├── shared/                   # 共享源码 / Shared source code
+│   ├── forge-26.1/               # Jar: 26.1.x (Forge 64, Java 25)
 │   └── build-all.bat             # 一键构建 / One-click build
 ├── build.gradle                  # Forge 构建配置 (1.20.1 legacy) / Forge build config (1.20.1 legacy)
 ├── gradle.properties             # 模组版本与元数据 / Mod version & metadata

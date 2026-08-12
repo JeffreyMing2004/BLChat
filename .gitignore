@@ -6,6 +6,9 @@ build/
 # build/
 crash-reports/
 
+# mdk
+mdk-25.1.2/
+mdk-26.1.2-mdk.zip
 
 # proguard
 proguard-7.4.2/
