@@ -2,8 +2,8 @@
 
 <div align="center">
 
-![Minecraft](https://img.shields.io/badge/Minecraft-1.20.1-green)
-![Java](https://img.shields.io/badge/Java-17+-orange)
+![Minecraft](https://img.shields.io/badge/Minecraft-1.20~1.21.11-green)
+![Java](https://img.shields.io/badge/Java-17_/_21-orange)
 ![Node.js](https://img.shields.io/badge/Node.js-18+-brightgreen)
 ![Bilibili](https://img.shields.io/badge/Bilibili-Live-blue)
 ![License](https://img.shields.io/badge/License-All_Rights_Reserved-yellow)
@@ -56,17 +56,20 @@ BLChat is a complete Bilibili live danmaku integration for Minecraft, consisting
 
 ### 前置条件 / Prerequisites
 
-- **MC 模组**：Java 17、Minecraft 1.20.1-1.20.6 + Forge 47-50
-- **H5 插件**：Node.js 18+
-- **B 站开放平台**：已申请并获得 Access Key、Access Secret、App ID
+- **MC 模组**：Java 17（1.20.x）或 Java 21（1.21.x）、Minecraft 1.20~1.21.11 + Forge 46~61
+- **H5 插件**：Node.js 18+（独立仓库 / Separate repo）
+- **B 站开放平台**：H5 面板部署需 Access Key、Access Secret、App ID；MC 模组仅需主播身份码（凭据已内置）
 
-MC Mod: Java 17, Minecraft 1.20.1-1.20.6 + Forge 47-50
-H5 Plugin: Node.js 18+  
-Bilibili Open Platform: Access Key, Access Secret, App ID required
+MC Mod: Java 17 (1.20.x) or Java 21 (1.21.x), Minecraft 1.20~1.21.11 + Forge 46~61
+H5 Plugin: Node.js 18+ (separate repo)
+Bilibili Open Platform: H5 panel requires Access Key, Access Secret, App ID; MC mod only needs streamer identity code (credentials built-in)
 
 申请地址 / Apply at: [哔哩哔哩直播开放平台](https://open-live.bilibili.com/)
 
 ### 一、部署 H5 管理面板 / Deploy H5 Panel
+
+> H5 管理面板源码位于独立仓库，详见 [h5.mingpixel.net](https://h5.mingpixel.net)。
+> The H5 panel source is maintained in a separate repo, see [h5.mingpixel.net](https://h5.mingpixel.net).
 
 #### 1. 配置环境变量 / Configure Environment
 
@@ -130,10 +133,25 @@ npm start
 
 ### 二、安装 MC 模组 / Install MC Mod
 
-1. 安装 Minecraft Forge（支持 1.20.1-1.20.6） / Install Minecraft Forge (supports 1.20.1-1.20.6)
-2. 从 [GitHub Releases](https://github.com/JeffreyMing2004/BilibiliChat-MC-Forge/releases) 下载最新 `.jar`
+1. 安装 Minecraft Forge / Install Minecraft Forge
+2. 从 [GitHub Releases](https://github.com/JeffreyMing2004/BilibiliChat-MC-Forge/releases) 下载与你 MC 版本对应的 `.jar` / Download the `.jar` matching your MC version
 3. 将 `.jar` 放入 `mods/` 目录 / Put `.jar` into `mods/` directory
 4. 启动游戏 / Launch game
+
+**版本对照 / Version mapping:**
+
+| MC 版本 / Version | 下载文件 / Download |
+|-------------------|---------------------|
+| 1.20 ~ 1.20.1 | `bilibilichatmcforge-1.20-1.20.1-*.jar` |
+| 1.20.2 ~ 1.20.4 | `bilibilichatmcforge-1.20.2-1.20.4-*.jar` |
+| 1.20.6 | `bilibilichatmcforge-1.20.6-*.jar` |
+| 1.21 ~ 1.21.1 | `bilibilichatmcforge-1.21-1.21.1-*.jar` |
+| 1.21.2 ~ 1.21.5 | `bilibilichatmcforge-1.21.2-1.21.5-*.jar` |
+| 1.21.6 ~ 1.21.10 | `bilibilichatmcforge-1.21.6-1.21.10-*.jar` |
+| 1.21.11 | `bilibilichatmcforge-1.21.11-*.jar` |
+
+> **注意**：MC 1.20.5 无 Forge 版本，使用 1.20.6 jar 即可。
+> **Note**: MC 1.20.5 has no Forge build, use the 1.20.6 jar instead.
 
 ### 三、配置 MC 模组 / Configure MC Mod
 
@@ -191,7 +209,7 @@ Stream starts → Get identity code → Verify in H5 panel → Get OBS URL
 
 | 层 / Layer | 技术 / Technology |
 |----|------|
-| MC 模组 | Java 17 · Minecraft Forge 47.x |
+| MC 模组 | Java 17 / 21 · Minecraft Forge 46~61 · 多 jar 架构 / Multi-jar architecture |
 | 前端 / Frontend | Vue 3 · Vite 5 |
 | 后端 / Backend | Node.js · Express · WebSocket |
 | 存储 / Storage | SQLite（sql.js） |
@@ -201,16 +219,27 @@ Stream starts → Get identity code → Verify in H5 panel → Get OBS URL
 ## 项目结构 / Project Structure
 
 ```
-bilibiliChat-MC-Forge/
-├── src/                          # MC Forge Mod 源码 / MC Forge Mod source
-├── 1.20.x/                       # MC 1.20.1-1.20.6 通用版 / Universal for 1.20.1-1.20.6
-│   └── Forge/                    # Forge 版 Mod / Forge mod
-├── h5-plugin/                    # H5 管理面板 / H5 management panel
-│   ├── client/                   # Vue 3 前端 / Vue 3 frontend
-│   └── server/                   # Express 后端 / Express backend
-├── build.gradle                  # Forge 构建配置 / Forge build config
-└── gradle.properties             # 模组版本与元数据 / Mod version & metadata
+BLChat/
+├── 1.20.x/                       # MC 1.20~1.20.6 多版本 / Multi-version for 1.20~1.20.6
+│   ├── shared/                   # 共享源码 / Shared source code
+│   ├── forge-1.20/               # Jar: 1.20~1.20.1 (Forge 46~47, Java 17)
+│   ├── forge-1.20.2/             # Jar: 1.20.2~1.20.4 (Forge 48~49, Java 17)
+│   ├── forge-1.20.6/             # Jar: 1.20.6 (Forge 50, Java 21)
+│   └── build-all.bat             # 一键构建 / One-click build
+├── 1.21.x/                       # MC 1.21~1.21.11 多版本 / Multi-version for 1.21~1.21.11
+│   ├── shared/                   # 共享源码 / Shared source code
+│   ├── forge-1.21/               # Jar: 1.21~1.21.1 (Forge 51~52, Java 21)
+│   ├── forge-1.21.2/             # Jar: 1.21.2~1.21.5 (Forge 53~55, Java 21)
+│   ├── forge-1.21.6/             # Jar: 1.21.6~1.21.10 (Forge 56~60, Java 21)
+│   ├── forge-1.21.11/            # Jar: 1.21.11 (Forge 61, Java 21)
+│   └── build-all.bat             # 一键构建 / One-click build
+├── build.gradle                  # Forge 构建配置 (1.20.1 legacy) / Forge build config (1.20.1 legacy)
+├── gradle.properties             # 模组版本与元数据 / Mod version & metadata
+└── README.md
 ```
+
+> H5 管理面板与 OBS 弹幕覆盖层源码位于独立仓库。
+> H5 panel & OBS overlay sources are maintained in a separate repo.
 
 ## 注意事项 / Notes
 
