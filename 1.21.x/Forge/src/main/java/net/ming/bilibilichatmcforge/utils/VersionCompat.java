@@ -51,7 +51,18 @@ public final class VersionCompat {
 
     private static String detectMCVersion() {
         try {
-            return net.minecraft.SharedConstants.getCurrentVersion().getName();
+            Object version = net.minecraft.SharedConstants.getCurrentVersion();
+            for (String methodName : new String[]{"getName", "getId", "getReleaseTarget"}) {
+                try {
+                    Method m = version.getClass().getMethod(methodName);
+                    Object result = m.invoke(version);
+                    if (result != null) {
+                        return result.toString();
+                    }
+                } catch (NoSuchMethodException ignored) {
+                }
+            }
+            return version.toString();
         } catch (Exception e) {
             return "unknown";
         }
