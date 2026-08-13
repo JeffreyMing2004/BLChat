@@ -79,8 +79,10 @@ public class VersionChecker {
     }
 
     private static boolean isNewerVersion(String remote, String local) {
-        String[] remoteParts = remote.split("\\.");
-        String[] localParts = local.split("\\.");
+        String cleanRemote = cleanVersionString(remote);
+        String cleanLocal = cleanVersionString(local);
+        String[] remoteParts = cleanRemote.split("\\.");
+        String[] localParts = cleanLocal.split("\\.");
 
         int maxLen = Math.max(remoteParts.length, localParts.length);
         for (int i = 0; i < maxLen; i++) {
@@ -90,6 +92,18 @@ public class VersionChecker {
             if (r < l) return false;
         }
         return false;
+    }
+
+    private static String cleanVersionString(String version) {
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\d+(\\.\\d+)+)").matcher(version);
+        if (m.find()) {
+            return m.group(1);
+        }
+        m = java.util.regex.Pattern.compile("(\\d+)").matcher(version);
+        if (m.find()) {
+            return m.group(1);
+        }
+        return version;
     }
 
     private static int parseVersionPart(String s) {
