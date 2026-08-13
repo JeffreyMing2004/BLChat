@@ -22,7 +22,7 @@ public class VersionChecker {
             .build();
 
     private static final String VERSION_URL = "https://version.mingpixel.net/26/26.2/version.blchat";
-    private static final String CURRENT_VERSION = "1.0.0";
+    private static final String CURRENT_VERSION = "1.0.4.304";
 
     public static void checkAsync(MinecraftServer server) {
         CompletableFuture.runAsync(() -> {
