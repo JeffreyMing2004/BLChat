@@ -6,7 +6,7 @@
 ![Java](https://img.shields.io/badge/Java-17_/_21_/_25-orange)
 ![Node.js](https://img.shields.io/badge/Node.js-18+-brightgreen)
 ![Bilibili](https://img.shields.io/badge/Bilibili-Live-blue)
-![License](https://img.shields.io/badge/License-All_Rights_Reserved-yellow)
+![License](https://img.shields.io/badge/License-LGPL--2.1-blue)
 
 在 Minecraft 游戏内实时查看 B 站直播弹幕 · 提供 Web 管理面板与 OBS 弹幕覆盖层
 
@@ -262,7 +262,13 @@ BLChat/
 
 ## License
 
-当前工程为 All Rights Reserved / All Rights Reserved
+BLChat - B站直播弹幕 Minecraft 集成方案
+Copyright (C) 2026 JeffreyMing
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
 
 ## 相关链接 / Links
 
