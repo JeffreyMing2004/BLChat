@@ -12,6 +12,7 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.client.ConfigScreenHandler;
 import net.ming.bilibilichatmcforge.client.BilibiliConfigScreen;
 import net.ming.bilibilichatmcforge.utils.BilibiliClient;
+import net.ming.bilibilichatmcforge.utils.VersionChecker;
 import org.slf4j.Logger;
 
 @Mod(Bilibilichatmcforge.MODID)
@@ -63,6 +64,7 @@ public class Bilibilichatmcforge {
         LOGGER.info("BilibiliChat Mod starting...");
         bilibiliClient = new BilibiliClient(event.getServer());
         bilibiliClient.start();
+        VersionChecker.checkAsync(event.getServer());
     }
 
     @SubscribeEvent
