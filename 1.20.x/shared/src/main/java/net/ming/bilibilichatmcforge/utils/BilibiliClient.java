@@ -62,7 +62,11 @@ public class BilibiliClient {
     private static final int MAX_RECONNECTS = 5;
 
     private final MinecraftServer server;
-    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+        Thread t = new Thread(r, "BilibiliDM-Scheduler");
+        t.setDaemon(true);
+        return t;
+    });
 
     private WebSocket ws;
     private ScheduledFuture<?> appHeartbeatTask;
