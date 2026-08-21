@@ -23,8 +23,8 @@ public class VersionChecker {
             .connectTimeout(Duration.ofSeconds(10))
             .build();
 
-    private static final String VERSION_URL = "https://version.mingpixel.net/26/26.2/version.blchat";
-    private static final String CURRENT_VERSION = loadCurrentVersion();
+    public static final String VERSION_URL = "https://version.mingpixel.net/26/26.2/version.blchat";
+    public static final String CURRENT_VERSION = loadCurrentVersion();
 
     public static void checkAsync(MinecraftServer server) {
         CompletableFuture.runAsync(() -> {
@@ -56,9 +56,10 @@ public class VersionChecker {
                     latestVersion = body;
                 }
 
-                LOGGER.info("Version check: current={}, latest={}", CURRENT_VERSION, latestVersion);
+                int cmp = compareVersions(latestVersion, CURRENT_VERSION);
+                LOGGER.info("Version check: current={}, latest={}, cmp={}", CURRENT_VERSION, latestVersion, cmp);
 
-                if (isNewerVersion(latestVersion, CURRENT_VERSION)) {
+                if (cmp > 0) {
                     String finalChangelog = changelog;
                     String finalLatestVersion = latestVersion;
                     server.execute(() -> {
@@ -71,8 +72,13 @@ public class VersionChecker {
                                     false);
                         }
                     });
+                } else if (cmp == 0) {
+                    String finalLatestVersion = latestVersion;
+                    server.execute(() -> server.getPlayerList().broadcastSystemMessage(
+                            Component.translatable("mod.bilibilichatmcforge.info.version_latest", finalLatestVersion),
+                            false));
                 } else {
-                    LOGGER.info("BLChat is up to date (version {})", CURRENT_VERSION);
+                    LOGGER.info("Local version {} is newer than remote {}; skipping notice", CURRENT_VERSION, latestVersion);
                 }
             } catch (Exception e) {
                 LOGGER.warn("Version check failed: {}", e.getMessage());
@@ -80,7 +86,7 @@ public class VersionChecker {
         });
     }
 
-    private static boolean isNewerVersion(String remote, String local) {
+    private static int compareVersions(String remote, String local) {
         int[] remoteParts = parseVersionParts(remote);
         int[] localParts = parseVersionParts(local);
 
@@ -88,10 +94,9 @@ public class VersionChecker {
         for (int i = 0; i < maxLen; i++) {
             int r = i < remoteParts.length ? remoteParts[i] : 0;
             int l = i < localParts.length ? localParts[i] : 0;
-            if (r > l) return true;
-            if (r < l) return false;
+            if (r != l) return r > l ? 1 : -1;
         }
-        return false;
+        return 0;
     }
 
     private static int[] parseVersionParts(String version) {

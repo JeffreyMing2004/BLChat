@@ -62,6 +62,8 @@ public class Bilibilichatmcforge {
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event) {
         LOGGER.info("BilibiliChat Mod starting...");
+        LOGGER.info("Current version: {}", VersionChecker.CURRENT_VERSION);
+        LOGGER.info("Version check URL: {}", VersionChecker.VERSION_URL);
         bilibiliClient = new BilibiliClient(event.getServer());
         bilibiliClient.start();
         VersionChecker.checkAsync(event.getServer());
