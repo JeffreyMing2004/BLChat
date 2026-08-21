@@ -22,6 +22,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -43,9 +44,12 @@ public class BilibiliClient {
     private static final Gson GSON = new Gson();
     private static final HttpClient HTTP = HttpClient.newBuilder().build();
 
-    // 开放平台应用凭据，随模组内置分发，主播侧只需填身份码
-    private static final String ACCESS_KEY_ID = "bq96FKKv15yroVpW1K77HRlZ";
-    private static final String ACCESS_SECRET = "y5irBHscUC37KT5rq9SL0MhgKkDKks";
+    // 开放平台应用凭据随模组内置分发（主播侧只填身份码）。
+    // 字节码里不落明文：源码保存的是逐字节异或 + Base64 的结果，类加载时还原。
+    // 轮换密钥后运行 tools/encode-credentials.ps1 重新生成下面两行。
+    private static final String ACCESS_KEY_ID = unmask("XlI7VwbszZP1HnMbJ/n+uv14JUYY5fqv", 0x3C);
+    private static final String ACCESS_SECRET = unmask("JnUIcGGMluXyC1o9YJjY/N5pIl4DmZ3x/DM9UVCv", 0x5F);
+    // app_id 会随每个请求体明文传输，混淆它没有意义
     private static final long APP_ID = 1779863002402L;
 
     private static final String API_START = "https://live-open.biliapi.com/v2/app/start";
@@ -255,6 +259,18 @@ public class BilibiliClient {
             sb.append(Character.forDigit((b >> 4) & 0xf, 16)).append(Character.forDigit(b & 0xf, 16));
         }
         return sb.toString();
+    }
+
+    /**
+     * 还原 encode-credentials.ps1 混淆过的凭据，位置相关的异或避免相同字符产生规律。
+     */
+    private static String unmask(String encoded, int key) {
+        byte[] raw = Base64.getDecoder().decode(encoded);
+        byte[] out = new byte[raw.length];
+        for (int i = 0; i < raw.length; i++) {
+            out[i] = (byte) (raw[i] ^ key ^ (i * 31 & 0xff));
+        }
+        return new String(out, StandardCharsets.UTF_8);
     }
 
     /**
