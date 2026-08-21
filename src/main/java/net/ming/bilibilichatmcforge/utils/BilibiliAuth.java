@@ -1,87 +1,74 @@
 package net.ming.bilibilichatmcforge.utils;
 
-import com.google.gson.Gson;
 import net.ming.bilibilichatmcforge.JsonConfigManager;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
 
+/**
+ * 按开放平台规范计算请求签名：六个 x-bili 头按 key 排序拼接后做 HMAC-SHA256。
+ */
 public class BilibiliAuth {
-    private static final Gson GSON = new Gson();
 
     public static Map<String, String> getHeaders(String body) {
         String accessKey = JsonConfigManager.getInstance().accessKey;
         String accessSecret = JsonConfigManager.getInstance().accessSecret;
-
         if (accessKey == null || accessKey.isEmpty() || accessSecret == null || accessSecret.isEmpty()) {
-            return new HashMap<>();
+            return new TreeMap<>();
         }
 
-        String timestamp = String.valueOf(System.currentTimeMillis() / 1000);
-        String nonce = UUID.randomUUID().toString();
-        String contentMd5 = md5(body);
+        Map<String, String> headers = new TreeMap<>();
+        headers.put("x-bili-accesskeyid", accessKey);
+        headers.put("x-bili-content-md5", md5(body));
+        headers.put("x-bili-signature-method", "HMAC-SHA256");
+        headers.put("x-bili-signature-nonce", UUID.randomUUID().toString());
+        headers.put("x-bili-signature-version", "1.0");
+        headers.put("x-bili-timestamp", String.valueOf(System.currentTimeMillis() / 1000));
 
-        Map<String, String> headerMap = new TreeMap<>();
-        headerMap.put("x-bili-accesskeyid", accessKey);
-        headerMap.put("x-bili-content-md5", contentMd5);
-        headerMap.put("x-bili-signature-method", "HMAC-SHA256");
-        headerMap.put("x-bili-signature-nonce", nonce);
-        headerMap.put("x-bili-signature-version", "1.0");
-        headerMap.put("x-bili-timestamp", timestamp);
-
-        StringBuilder sb = new StringBuilder();
-        for (Map.Entry<String, String> entry : headerMap.entrySet()) {
-            if (sb.length() > 0) {
-                sb.append("\n");
-            }
-            sb.append(entry.getKey()).append(":").append(entry.getValue());
+        StringBuilder canonical = new StringBuilder();
+        for (Map.Entry<String, String> entry : headers.entrySet()) {
+            if (canonical.length() > 0) canonical.append('\n');
+            canonical.append(entry.getKey()).append(':').append(entry.getValue());
         }
 
-        String signature = hmacSha256(accessSecret, sb.toString());
-        headerMap.put("Authorization", signature);
-        headerMap.put("Content-Type", "application/json");
-        headerMap.put("Accept", "application/json");
-
-        return headerMap;
+        headers.put("Authorization", hmacSha256(accessSecret, canonical.toString()));
+        headers.put("Content-Type", "application/json");
+        headers.put("Accept", "application/json");
+        return headers;
     }
 
     private static String md5(String input) {
-        try {
-            MessageDigest md = MessageDigest.getInstance("MD5");
-            byte[] messageDigest = md.digest(input.getBytes(StandardCharsets.UTF_8));
-            StringBuilder hexString = new StringBuilder();
-            for (byte b : messageDigest) {
-                String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) hexString.append('0');
-                hexString.append(hex);
-            }
-            return hexString.toString();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return digest("MD5", input);
     }
 
     private static String hmacSha256(String secret, String message) {
         try {
-            Mac sha256_HMAC = Mac.getInstance("HmacSHA256");
-            SecretKeySpec secret_key = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
-            sha256_HMAC.init(secret_key);
-            byte[] bytes = sha256_HMAC.doFinal(message.getBytes(StandardCharsets.UTF_8));
-            StringBuilder hexString = new StringBuilder();
-            for (byte b : bytes) {
-                String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) hexString.append('0');
-                hexString.append(hex);
-            }
-            return hexString.toString();
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+            return toHex(mac.doFinal(message.getBytes(StandardCharsets.UTF_8)));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static String digest(String algorithm, String input) {
+        try {
+            return toHex(MessageDigest.getInstance(algorithm).digest(input.getBytes(StandardCharsets.UTF_8)));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static String toHex(byte[] bytes) {
+        StringBuilder sb = new StringBuilder(bytes.length * 2);
+        for (byte b : bytes) {
+            sb.append(Character.forDigit((b >> 4) & 0xf, 16)).append(Character.forDigit(b & 0xf, 16));
+        }
+        return sb.toString();
     }
 }

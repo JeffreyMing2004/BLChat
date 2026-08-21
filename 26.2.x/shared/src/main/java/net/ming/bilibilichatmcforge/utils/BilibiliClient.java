@@ -9,8 +9,14 @@ import net.minecraft.server.MinecraftServer;
 import org.slf4j.Logger;
 import com.mojang.logging.LogUtils;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.net.http.WebSocket;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -18,248 +24,81 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.Inflater;
-import java.io.ByteArrayOutputStream;
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
 
+/**
+ * 对接哔哩哔哩直播开放平台：申请弹幕会话、维持心跳，
+ * 并把收到的弹幕/礼物/SC/大航海事件广播到游戏聊天栏。
+ */
 public class BilibiliClient {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final Gson GSON = new Gson();
-    private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder().build();
-    private static final ScheduledExecutorService SCHEDULER = Executors.newSingleThreadScheduledExecutor();
+    private static final HttpClient HTTP = HttpClient.newBuilder().build();
 
-    private WebSocket webSocket;
+    // 开放平台应用凭据，随模组内置分发，主播侧只需填身份码
+    private static final String ACCESS_KEY_ID = "bq96FKKv15yroVpW1K77HRlZ";
+    private static final String ACCESS_SECRET = "y5irBHscUC37KT5rq9SL0MhgKkDKks";
+    private static final long APP_ID = 1779863002402L;
+
+    private static final String API_START = "https://live-open.biliapi.com/v2/app/start";
+    private static final String API_HEARTBEAT = "https://live-open.biliapi.com/v2/app/heartbeat";
+    private static final String API_END = "https://live-open.biliapi.com/v2/app/end";
+
+    // 收到的数据包不可信，超限直接丢弃，防止被撑爆内存
+    private static final int MAX_PACKET_BYTES = 1024 * 1024;
+    private static final int MAX_DECOMPRESSED_BYTES = 4 * 1024 * 1024;
+    private static final int MAX_RECONNECTS = 5;
+
     private final MinecraftServer server;
+    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+
+    private WebSocket ws;
+    private ScheduledFuture<?> appHeartbeatTask;
+    private ScheduledFuture<?> wsHeartbeatTask;
     private String gameId;
-    private boolean isRunning = false;
-    private java.util.concurrent.ScheduledFuture<?> heartbeatTask;
-    private int reconnectAttempts = 0;
-    private static final int MAX_RECONNECT_ATTEMPTS = 5;
+    private volatile boolean running;
+    private int reconnects;
 
     public BilibiliClient(MinecraftServer server) {
         this.server = server;
     }
 
     public void start() {
-        if (isRunning) return;
-        isRunning = true;
-        reconnectAttempts = 0;
+        if (running) return;
+        running = true;
+        reconnects = 0;
 
-        String identityCode = JsonConfigManager.getInstance().identityCode;
-        if (identityCode == null || identityCode.isEmpty()) {
+        if (JsonConfigManager.getInstance().identityCode.isEmpty()) {
             LOGGER.error("Bilibili identity code is not configured");
-            server.execute(() -> server.getPlayerList().broadcastSystemMessage(
-                    Component.translatable("mod.bilibilichatmcforge.error.identity_code_missing"), false));
-            isRunning = false;
+            broadcast(Component.translatable("mod.bilibilichatmcforge.error.identity_code_missing"));
+            running = false;
             return;
         }
-
         CompletableFuture.runAsync(this::connect);
     }
 
-    private void connect() {
-        try {
-            JsonConfigManager.ConfigData config = JsonConfigManager.getInstance();
-            String url = "https://live-open.biliapi.com/v2/app/start";
-            JsonObject body = new JsonObject();
-            body.addProperty("app_id", APP_ID);
-            body.addProperty("code", config.identityCode);
-            String bodyStr = GSON.toJson(body);
-
-            Map<String, String> headers = getHeaders(bodyStr);
-            java.net.http.HttpRequest.Builder requestBuilder = java.net.http.HttpRequest.newBuilder()
-                    .uri(URI.create(url))
-                    .POST(java.net.http.HttpRequest.BodyPublishers.ofString(bodyStr));
-
-            headers.forEach(requestBuilder::header);
-
-            java.net.http.HttpResponse<String> response = HTTP_CLIENT.send(requestBuilder.build(),
-                    java.net.http.HttpResponse.BodyHandlers.ofString());
-            LOGGER.debug("HTTP Response Code: {}", response.statusCode());
-            LOGGER.debug("HTTP Response Body: {}", response.body());
-            JsonObject respJson = GSON.fromJson(response.body(), JsonObject.class);
-
-            if (respJson.get("code").getAsInt() != 0) {
-                String errorMsg = respJson.get("message").getAsString();
-                LOGGER.error("Failed to start Bilibili app: {}", errorMsg);
-                server.execute(() -> server.getPlayerList().broadcastSystemMessage(
-                        Component.translatable("mod.bilibilichatmcforge.error.app_start_failed", errorMsg), false));
-                isRunning = false;
-                return;
-            }
-
-            JsonObject data = respJson.getAsJsonObject("data");
-            gameId = data.get("game_info").getAsJsonObject().get("game_id").getAsString();
-
-            // Start Project Heartbeat (v2/app/heartbeat) - every 20 seconds
-            if (heartbeatTask != null) heartbeatTask.cancel(true);
-            heartbeatTask = SCHEDULER.scheduleAtFixedRate(this::sendHeartbeat, 20, 20, TimeUnit.SECONDS);
-
-            JsonObject websocketInfo = data.getAsJsonObject("websocket_info");
-            String authBody = websocketInfo.get("auth_body").getAsString();
-            List<String> wssLinks = GSON.fromJson(websocketInfo.get("wss_link"), List.class);
-
-            if (wssLinks.isEmpty()) {
-                LOGGER.error("No WSS links provided by Bilibili.");
-                isRunning = false;
-                return;
-            }
-
-            String wssUrl = wssLinks.get(0);
-            HTTP_CLIENT.newWebSocketBuilder()
-                    .buildAsync(URI.create(wssUrl), new BilibiliWebSocketListener(authBody))
-                    .thenAccept(ws -> {
-                        this.webSocket = ws;
-                        reconnectAttempts = 0;
-                        LOGGER.info("Connected to Bilibili WebSocket");
-                        server.execute(() -> server.getPlayerList().broadcastSystemMessage(
-                                Component.translatable("mod.bilibilichatmcforge.info.connected"), false));
-                    });
-
-        } catch (Exception e) {
-            LOGGER.error("Error connecting to Bilibili", e);
-            String errorMsg = e.getMessage();
-            if (e.getCause() instanceof java.nio.channels.UnresolvedAddressException) {
-                errorMsg = "DNS解析失败，请检查网络连接";
-            }
-            String finalErrorMsg = errorMsg;
-            server.execute(() -> server.getPlayerList().broadcastSystemMessage(
-                    Component.translatable("mod.bilibilichatmcforge.error.connect_failed", finalErrorMsg), false));
-            isRunning = false;
-        }
-    }
-
-    private void sendHeartbeat() {
-        if (!isRunning || gameId == null) return;
-        try {
-            String url = "https://live-open.biliapi.com/v2/app/heartbeat";
-            JsonObject body = new JsonObject();
-            body.addProperty("game_id", gameId);
-            String bodyStr = GSON.toJson(body);
-
-            Map<String, String> headers = getHeaders(bodyStr);
-            java.net.http.HttpRequest.Builder requestBuilder = java.net.http.HttpRequest.newBuilder()
-                    .uri(URI.create(url))
-                    .POST(java.net.http.HttpRequest.BodyPublishers.ofString(bodyStr));
-
-            headers.forEach(requestBuilder::header);
-            HTTP_CLIENT.sendAsync(requestBuilder.build(), java.net.http.HttpResponse.BodyHandlers.ofString());
-        } catch (Exception e) {
-            LOGGER.error("Error sending Bilibili heartbeat", e);
-        }
-    }
-
-    private static final String ACCESS_KEY_ID = "bq96FKKv15yroVpW1K77HRlZ";
-    private static final String ACCESS_KEY_SECRET = "y5irBHscUC37KT5rq9SL0MhgKkDKks";
-    private static final long APP_ID = 1779863002402L;
-
-    private Map<String, String> getHeaders(String body) {
-        String timestamp = String.valueOf(System.currentTimeMillis() / 1000);
-        String nonce = UUID.randomUUID().toString();
-        String contentMd5 = md5(body);
-
-        LOGGER.debug("Signing body: {}", body);
-        LOGGER.debug("Content-MD5: {}", contentMd5);
-
-        Map<String, String> headerMap = new java.util.TreeMap<>();
-        headerMap.put("x-bili-accesskeyid", ACCESS_KEY_ID);
-        headerMap.put("x-bili-content-md5", contentMd5);
-        headerMap.put("x-bili-signature-method", "HMAC-SHA256");
-        headerMap.put("x-bili-signature-nonce", nonce);
-        headerMap.put("x-bili-signature-version", "1.0");
-        headerMap.put("x-bili-timestamp", timestamp);
-
-        StringBuilder sb = new StringBuilder();
-        for (Map.Entry<String, String> entry : headerMap.entrySet()) {
-            if (sb.length() > 0) {
-                sb.append("\n");
-            }
-            sb.append(entry.getKey()).append(":").append(entry.getValue());
-        }
-
-        String stringToSign = sb.toString();
-        LOGGER.debug("String to sign:\n{}", stringToSign);
-
-        String signature = hmacSha256(ACCESS_KEY_SECRET, stringToSign);
-        LOGGER.debug("Signature: {}", signature);
-
-        headerMap.put("Authorization", signature);
-        headerMap.put("Content-Type", "application/json");
-        headerMap.put("Accept", "application/json");
-
-        return headerMap;
-    }
-
-    private String md5(String input) {
-        try {
-            MessageDigest md = MessageDigest.getInstance("MD5");
-            byte[] messageDigest = md.digest(input.getBytes(StandardCharsets.UTF_8));
-            StringBuilder hexString = new StringBuilder();
-            for (byte b : messageDigest) {
-                String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) hexString.append('0');
-                hexString.append(hex);
-            }
-            return hexString.toString();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private String hmacSha256(String secret, String data) {
-        try {
-            Mac mac = Mac.getInstance("HmacSHA256");
-            SecretKeySpec keySpec = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
-            mac.init(keySpec);
-            byte[] bytes = mac.doFinal(data.getBytes(StandardCharsets.UTF_8));
-            StringBuilder hexString = new StringBuilder();
-            for (byte b : bytes) {
-                String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) hexString.append('0');
-                hexString.append(hex);
-            }
-            return hexString.toString();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     public void stop() {
-        if (!isRunning) return;
-        isRunning = false;
+        if (!running) return;
+        running = false;
+        cancelTimers();
 
-        if (heartbeatTask != null) {
-            heartbeatTask.cancel(true);
-            heartbeatTask = null;
+        if (ws != null) {
+            ws.sendClose(WebSocket.NORMAL_CLOSURE, "bye");
         }
-
-        if (webSocket != null) {
-            webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "Stopping");
-        }
-
         if (gameId != null) {
+            String id = gameId;
+            gameId = null;
             CompletableFuture.runAsync(() -> {
                 try {
-                    String url = "https://live-open.biliapi.com/v2/app/end";
-                    JsonObject body = new JsonObject();
-                    body.addProperty("app_id", APP_ID);
-                    body.addProperty("game_id", gameId);
-                    String bodyStr = GSON.toJson(body);
-
-                    Map<String, String> headers = getHeaders(bodyStr);
-                    java.net.http.HttpRequest.Builder requestBuilder = java.net.http.HttpRequest.newBuilder()
-                            .uri(URI.create(url))
-                            .POST(java.net.http.HttpRequest.BodyPublishers.ofString(bodyStr));
-
-                    headers.forEach(requestBuilder::header);
-                    HTTP_CLIENT.send(requestBuilder.build(), java.net.http.HttpResponse.BodyHandlers.ofString());
+                    post(API_END, GSON.toJson(endBody(id)));
                 } catch (Exception e) {
                     LOGGER.error("Error ending Bilibili app", e);
                 }
@@ -267,224 +106,347 @@ public class BilibiliClient {
         }
     }
 
-    private class BilibiliWebSocketListener implements WebSocket.Listener {
+    private void connect() {
+        try {
+            JsonObject body = new JsonObject();
+            body.addProperty("app_id", APP_ID);
+            body.addProperty("code", JsonConfigManager.getInstance().identityCode);
+
+            HttpResponse<String> resp = post(API_START, GSON.toJson(body));
+            JsonObject respJson = GSON.fromJson(resp.body(), JsonObject.class);
+            if (respJson.get("code").getAsInt() != 0) {
+                fail(Component.translatable("mod.bilibilichatmcforge.error.app_start_failed",
+                        respJson.get("message").getAsString()));
+                return;
+            }
+
+            JsonObject data = respJson.getAsJsonObject("data");
+            gameId = data.getAsJsonObject("game_info").get("game_id").getAsString();
+            // 项目级心跳，官方要求每 20 秒一次，断了会被回收会话
+            if (appHeartbeatTask != null) appHeartbeatTask.cancel(false);
+            appHeartbeatTask = scheduler.scheduleAtFixedRate(this::sendAppHeartbeat, 20, 20, TimeUnit.SECONDS);
+
+            JsonObject wsInfo = data.getAsJsonObject("websocket_info");
+            List<String> links = GSON.fromJson(wsInfo.get("wss_link"), List.class);
+            if (links == null || links.isEmpty()) {
+                LOGGER.error("No WSS links provided by Bilibili");
+                running = false;
+                return;
+            }
+
+            HTTP.newWebSocketBuilder()
+                    .buildAsync(URI.create(links.get(0)), new DanmakuListener(wsInfo.get("auth_body").getAsString()))
+                    .thenAccept(w -> {
+                        ws = w;
+                        reconnects = 0;
+                        broadcast(Component.translatable("mod.bilibilichatmcforge.info.connected"));
+                    });
+        } catch (Exception e) {
+            LOGGER.error("Error connecting to Bilibili", e);
+            String reason = e.getCause() instanceof java.nio.channels.UnresolvedAddressException
+                    ? "DNS解析失败，请检查网络连接"
+                    : e.getMessage();
+            fail(Component.translatable("mod.bilibilichatmcforge.error.connect_failed", reason));
+        }
+    }
+
+    private void sendAppHeartbeat() {
+        if (!running || gameId == null) return;
+        JsonObject body = new JsonObject();
+        body.addProperty("game_id", gameId);
+        postAsync(API_HEARTBEAT, GSON.toJson(body));
+    }
+
+    private void fail(Component msg) {
+        LOGGER.error("Bilibili connection failed, stopping client");
+        broadcast(msg);
+        running = false;
+    }
+
+    private void broadcast(Component msg) {
+        server.execute(() -> server.getPlayerList().broadcastSystemMessage(msg, false));
+    }
+
+    private void cancelTimers() {
+        if (appHeartbeatTask != null) {
+            appHeartbeatTask.cancel(false);
+            appHeartbeatTask = null;
+        }
+        if (wsHeartbeatTask != null) {
+            wsHeartbeatTask.cancel(false);
+            wsHeartbeatTask = null;
+        }
+    }
+
+    // ---- HTTP ----
+
+    private HttpResponse<String> post(String url, String body) throws Exception {
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .POST(HttpRequest.BodyPublishers.ofString(body));
+        sign(body).forEach(builder::header);
+        return HTTP.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+    }
+
+    private void postAsync(String url, String body) {
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .POST(HttpRequest.BodyPublishers.ofString(body));
+        sign(body).forEach(builder::header);
+        HTTP.sendAsync(builder.build(), HttpResponse.BodyHandlers.ofString());
+    }
+
+    private JsonObject endBody(String id) {
+        JsonObject body = new JsonObject();
+        body.addProperty("app_id", APP_ID);
+        body.addProperty("game_id", id);
+        return body;
+    }
+
+    /**
+     * 按开放平台规范计算签名：六个 x-bili 头按 key 排序拼接后做 HMAC-SHA256。
+     */
+    private Map<String, String> sign(String body) {
+        Map<String, String> headers = new TreeMap<>();
+        headers.put("x-bili-accesskeyid", ACCESS_KEY_ID);
+        headers.put("x-bili-content-md5", md5(body));
+        headers.put("x-bili-signature-method", "HMAC-SHA256");
+        headers.put("x-bili-signature-nonce", UUID.randomUUID().toString());
+        headers.put("x-bili-signature-version", "1.0");
+        headers.put("x-bili-timestamp", String.valueOf(System.currentTimeMillis() / 1000));
+
+        StringBuilder canonical = new StringBuilder();
+        for (Map.Entry<String, String> entry : headers.entrySet()) {
+            if (canonical.length() > 0) canonical.append('\n');
+            canonical.append(entry.getKey()).append(':').append(entry.getValue());
+        }
+
+        headers.put("Authorization", hmacSha256(ACCESS_SECRET, canonical.toString()));
+        headers.put("Content-Type", "application/json");
+        headers.put("Accept", "application/json");
+        return headers;
+    }
+
+    private String md5(String input) {
+        return digest("MD5", input);
+    }
+
+    private String hmacSha256(String secret, String input) {
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256");
+            mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+            return toHex(mac.doFinal(input.getBytes(StandardCharsets.UTF_8)));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private String digest(String algorithm, String input) {
+        try {
+            return toHex(MessageDigest.getInstance(algorithm).digest(input.getBytes(StandardCharsets.UTF_8)));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private String toHex(byte[] bytes) {
+        StringBuilder sb = new StringBuilder(bytes.length * 2);
+        for (byte b : bytes) {
+            sb.append(Character.forDigit((b >> 4) & 0xf, 16)).append(Character.forDigit(b & 0xf, 16));
+        }
+        return sb.toString();
+    }
+
+    /**
+     * 弹幕 WebSocket。协议是 B 站自定义的二进制分包：
+     * 16 字节头（包长/头长/协议版本/opcode/序号）+ 正文，op=5 为业务消息。
+     */
+    private class DanmakuListener implements WebSocket.Listener {
         private final String authBody;
 
-        public BilibiliWebSocketListener(String authBody) {
+        DanmakuListener(String authBody) {
             this.authBody = authBody;
         }
 
         @Override
-        public void onOpen(WebSocket webSocket) {
-            LOGGER.info("WebSocket onOpen, sending auth packet...");
-            sendPacket(webSocket, 7, authBody);
-            LOGGER.info("Auth packet sent, content: {}", authBody);
-            // Request binary data reception
-            webSocket.request(1);
-            SCHEDULER.scheduleAtFixedRate(() -> {
-                if (isRunning) {
-                    sendPacket(webSocket, 2, "");
-                    LOGGER.debug("WebSocket heartbeat sent");
-                }
+        public void onOpen(WebSocket socket) {
+            send(socket, OP_AUTH, authBody);
+            // 协议层心跳，30 秒一次；重连会走到新的 onOpen，旧任务先撤掉
+            if (wsHeartbeatTask != null) wsHeartbeatTask.cancel(false);
+            wsHeartbeatTask = scheduler.scheduleAtFixedRate(() -> {
+                if (running) send(socket, OP_HEARTBEAT, "");
             }, 30, 30, TimeUnit.SECONDS);
-            WebSocket.Listener.super.onOpen(webSocket);
+            WebSocket.Listener.super.onOpen(socket);
         }
 
         @Override
-        public CompletionStage<?> onBinary(WebSocket webSocket, ByteBuffer data, boolean last) {
-            LOGGER.debug("onBinary received {} bytes, last={}", data.remaining(), last);
-            handleBinary(data);
-            webSocket.request(1);
-            return WebSocket.Listener.super.onBinary(webSocket, data, last);
-        }
-
-        @Override
-        public CompletionStage<?> onClose(WebSocket webSocket, int statusCode, String reason) {
-            LOGGER.info("Bilibili WebSocket closed: {} {}", statusCode, reason);
-            if (isRunning) {
-                reconnectAttempts++;
-                if (reconnectAttempts > MAX_RECONNECT_ATTEMPTS) {
-                    LOGGER.error("达到最大重连次数({})，停止重连", MAX_RECONNECT_ATTEMPTS);
-                    server.execute(() -> server.getPlayerList().broadcastSystemMessage(
-                            Component.translatable("mod.bilibilichatmcforge.error.connect_failed",
-                                    "WebSocket连接失败，已达到最大重连次数"), false));
-                    isRunning = false;
-                    return WebSocket.Listener.super.onClose(webSocket, statusCode, reason);
-                }
-                LOGGER.info("Reconnecting in 5 seconds... (attempt {}/{})", reconnectAttempts, MAX_RECONNECT_ATTEMPTS);
-                SCHEDULER.schedule(BilibiliClient.this::connect, 5, TimeUnit.SECONDS);
+        public CompletionStage<?> onBinary(WebSocket socket, ByteBuffer data, boolean last) {
+            try {
+                handlePackets(data);
+            } catch (Exception e) {
+                LOGGER.warn("Failed to handle danmaku packet", e);
             }
-            return WebSocket.Listener.super.onClose(webSocket, statusCode, reason);
+            socket.request(1);
+            return WebSocket.Listener.super.onBinary(socket, data, last);
         }
 
         @Override
-        public void onError(WebSocket webSocket, Throwable error) {
+        public CompletionStage<?> onClose(WebSocket socket, int statusCode, String reason) {
+            LOGGER.info("Bilibili WebSocket closed: {} {}", statusCode, reason);
+            if (!running) {
+                return WebSocket.Listener.super.onClose(socket, statusCode, reason);
+            }
+            if (++reconnects > MAX_RECONNECTS) {
+                fail(Component.translatable("mod.bilibilichatmcforge.error.connect_failed",
+                        "WebSocket连接失败，已达到最大重连次数"));
+                return WebSocket.Listener.super.onClose(socket, statusCode, reason);
+            }
+            LOGGER.info("Reconnecting in 5 seconds ({}/{})", reconnects, MAX_RECONNECTS);
+            scheduler.schedule(BilibiliClient.this::connect, 5, TimeUnit.SECONDS);
+            return WebSocket.Listener.super.onClose(socket, statusCode, reason);
+        }
+
+        @Override
+        public void onError(WebSocket socket, Throwable error) {
             LOGGER.error("Bilibili WebSocket error", error);
         }
 
-        private void sendPacket(WebSocket ws, int op, String body) {
-            byte[] bodyBytes = body.getBytes(StandardCharsets.UTF_8);
-            int totalLen = 16 + bodyBytes.length;
-            ByteBuffer buffer = ByteBuffer.allocate(totalLen).order(ByteOrder.BIG_ENDIAN);
-            buffer.putInt(totalLen);
-            buffer.putShort((short) 16);
-            buffer.putShort((short) 1);
-            buffer.putInt(op);
-            buffer.putInt(1);
-            buffer.put(bodyBytes);
-            buffer.flip();
-            ws.sendBinary(buffer, true);
+        private void send(WebSocket socket, int op, String body) {
+            byte[] payload = body.getBytes(StandardCharsets.UTF_8);
+            ByteBuffer packet = ByteBuffer.allocate(16 + payload.length).order(ByteOrder.BIG_ENDIAN);
+            packet.putInt(16 + payload.length);
+            packet.putShort((short) 16); // 头部长度
+            packet.putShort((short) 1);  // 协议版本，正文裸 JSON
+            packet.putInt(op);
+            packet.putInt(1);
+            packet.put(payload);
+            packet.flip();
+            socket.sendBinary(packet, true);
         }
+    }
 
-        private void handleBinary(ByteBuffer data) {
-            data.order(ByteOrder.BIG_ENDIAN);
-            while (data.remaining() >= 16) {
-                int totalLen = data.getInt();
-                short headerLen = data.getShort();
-                short protoVer = data.getShort();
-                int op = data.getInt();
-                int seq = data.getInt();
+    private static final int OP_HEARTBEAT = 2;
+    private static final int OP_AUTH = 7;
+    private static final int OP_MESSAGE = 5;
 
-                LOGGER.debug("Packet: totalLen={}, headerLen={}, protoVer={}, op={}, seq={}, remaining={}",
-                        totalLen, headerLen, protoVer, op, seq, data.remaining());
+    private void handlePackets(ByteBuffer buf) throws IOException {
+        buf.order(ByteOrder.BIG_ENDIAN);
+        while (buf.remaining() >= 16) {
+            int totalLen = buf.getInt();
+            int headerLen = buf.getShort();
+            int protoVer = buf.getShort();
+            int op = buf.getInt();
+            buf.getInt(); // 序号，用不到
 
-                int bodyLen = totalLen - headerLen;
-                if (bodyLen > 0 && data.remaining() >= bodyLen) {
-                    byte[] bodyBytes = new byte[bodyLen];
-                    data.get(bodyBytes);
+            if (totalLen < 16 || totalLen > MAX_PACKET_BYTES || headerLen < 16) {
+                throw new IOException("malformed packet: len=" + totalLen + " header=" + headerLen);
+            }
+            int bodyLen = totalLen - headerLen;
+            if (bodyLen > buf.remaining()) {
+                throw new IOException("truncated packet: need " + bodyLen + ", got " + buf.remaining());
+            }
 
-                    if (op == 3) {
-                        LOGGER.debug("Heartbeat reply received (popularity)");
-                    } else if (op == 8) {
-                        LOGGER.info("Auth success response received");
-                    } else if (op == 5) {
-                        if (protoVer == 2) {
-                            try {
-                                byte[] decompressed = decompress(bodyBytes);
-                                LOGGER.debug("Decompressed {} bytes -> {} bytes", bodyBytes.length, decompressed.length);
-                                handleBinary(ByteBuffer.wrap(decompressed));
-                                continue;
-                            } catch (Exception e) {
-                                LOGGER.error("Error decompressing packet", e);
-                            }
-                        }
+            byte[] body = new byte[bodyLen];
+            buf.get(body);
 
-                        String jsonStr = new String(bodyBytes, StandardCharsets.UTF_8);
-                        LOGGER.debug("Message received: {}", jsonStr.length() > 200 ? jsonStr.substring(0, 200) + "..." : jsonStr);
-                        try {
-                            JsonObject json = GSON.fromJson(jsonStr, JsonObject.class);
-                            String cmd = json.get("cmd").getAsString();
-                            LOGGER.debug("CMD: {}", cmd);
-                            Component chatMsg = parseMessage(cmd, json);
-                            if (chatMsg != null) {
-                                LOGGER.info("Displaying message: {}", chatMsg.getString());
-                                Component msg = chatMsg;
-                                server.execute(() -> server.getPlayerList().broadcastSystemMessage(msg, false));
-                            } else {
-                                LOGGER.debug("Unhandled CMD: {}", cmd);
-                            }
-                        } catch (Exception e) {
-                            LOGGER.debug("Failed to parse message: {}", e.getMessage());
-                        }
-                    } else {
-                        LOGGER.debug("Unknown op code: {}", op);
-                    }
-                } else {
-                    break;
+            if (op != OP_MESSAGE) {
+                continue; // 心跳回复(op=3)、认证回复(op=8)不用处理
+            }
+            if (protoVer == 2) {
+                handlePackets(ByteBuffer.wrap(inflate(body)));
+                return; // 解压出来是完整的包流，递归处理完即可
+            }
+            dispatch(GSON.fromJson(new String(body, StandardCharsets.UTF_8), JsonObject.class));
+        }
+    }
+
+    private void dispatch(JsonObject json) {
+        try {
+            Component msg = parseMessage(json.get("cmd").getAsString(), json);
+            if (msg != null) {
+                server.execute(() -> server.getPlayerList().broadcastSystemMessage(msg, false));
+            }
+        } catch (Exception e) {
+            // 字段缺失或格式变化的消息直接忽略
+            LOGGER.debug("Skipped message: {}", e.getMessage());
+        }
+    }
+
+    private Component parseMessage(String cmd, JsonObject json) {
+        JsonObject data = json.has("data") ? json.getAsJsonObject("data") : null;
+        switch (cmd) {
+            case "LIVE_OPEN_PLATFORM_DM":
+            case "OPEN_LIVEROOM_DM":
+                return data == null ? null : Component.translatable("mod.bilibilichatmcforge.chat.danmaku",
+                        data.get("uname").getAsString(), data.get("msg").getAsString());
+            case "LIVE_OPEN_PLATFORM_SEND_GIFT":
+            case "OPEN_LIVEROOM_SEND_GIFT":
+                return data == null ? null : Component.translatable("mod.bilibilichatmcforge.chat.gift",
+                        data.get("uname").getAsString(), data.get("gift_name").getAsString(), data.get("gift_num").getAsInt());
+            case "LIVE_OPEN_PLATFORM_SUPER_CHAT":
+            case "OPEN_LIVEROOM_SUPER_CHAT":
+                return data == null ? null : Component.translatable("mod.bilibilichatmcforge.chat.sc",
+                        data.get("uname").getAsString(), data.get("rmb").getAsLong(), data.get("message").getAsString());
+            case "LIVE_OPEN_PLATFORM_GUARD":
+            case "OPEN_LIVEROOM_GUARD": {
+                if (data == null) return null;
+                String uname = data.getAsJsonObject("user_info").get("uname").getAsString();
+                return Component.translatable("mod.bilibilichatmcforge.chat.guard", uname, guardName(data.get("guard_level").getAsInt()));
+            }
+            // 以下是非开放平台的旧版推送格式，留着兼容
+            case "DANMU_MSG": {
+                JsonArray info = json.getAsJsonArray("info");
+                return Component.translatable("mod.bilibilichatmcforge.chat.danmaku",
+                        info.get(2).getAsJsonArray().get(1).getAsString(), info.get(1).getAsString());
+            }
+            case "SEND_GIFT":
+                return data == null ? null : Component.translatable("mod.bilibilichatmcforge.chat.gift",
+                        data.get("uname").getAsString(), data.get("giftName").getAsString(), data.get("num").getAsInt());
+            case "SUPER_CHAT_MESSAGE":
+                return data == null ? null : Component.translatable("mod.bilibilichatmcforge.chat.sc",
+                        data.getAsJsonObject("user_info").get("uname").getAsString(),
+                        data.get("price").getAsLong(), data.get("message").getAsString());
+            case "GUARD_BUY":
+                return data == null ? null : Component.translatable("mod.bilibilichatmcforge.chat.guard",
+                        data.get("username").getAsString(), data.get("gift_name").getAsString());
+            default:
+                return null;
+        }
+    }
+
+    private String guardName(int level) {
+        switch (level) {
+            case 1: return "总督";
+            case 2: return "提督";
+            case 3: return "舰长";
+            default: return "大航海";
+        }
+    }
+
+    /**
+     * zlib 解压，带输出上限。理论上限内的正常弹幕包远小于这个值。
+     */
+    private byte[] inflate(byte[] compressed) throws IOException {
+        Inflater inflater = new Inflater();
+        inflater.setInput(compressed);
+        ByteArrayOutputStream out = new ByteArrayOutputStream(compressed.length * 4);
+        byte[] chunk = new byte[8192];
+        try {
+            while (!inflater.finished()) {
+                int n = inflater.inflate(chunk);
+                if (n == 0 && inflater.needsInput()) {
+                    throw new IOException("truncated zlib stream");
+                }
+                out.write(chunk, 0, n);
+                if (out.size() > MAX_DECOMPRESSED_BYTES) {
+                    throw new IOException("decompressed packet too large, aborting");
                 }
             }
-        }
-
-        private Component parseMessage(String cmd, JsonObject json) {
-            switch (cmd) {
-                // 直播开放平台弹幕（新旧CMD兼容）
-                case "OPEN_LIVEROOM_DM":
-                case "LIVE_OPEN_PLATFORM_DM": {
-                    JsonObject data = json.getAsJsonObject("data");
-                    String uname = data.get("uname").getAsString();
-                    String msg = data.get("msg").getAsString();
-                    return Component.translatable("mod.bilibilichatmcforge.chat.danmaku", uname, msg);
-                }
-                // 直播开放平台礼物
-                case "OPEN_LIVEROOM_SEND_GIFT":
-                case "LIVE_OPEN_PLATFORM_SEND_GIFT": {
-                    JsonObject data = json.getAsJsonObject("data");
-                    String uname = data.get("uname").getAsString();
-                    String giftName = data.get("gift_name").getAsString();
-                    int giftNum = data.get("gift_num").getAsInt();
-                    return Component.translatable("mod.bilibilichatmcforge.chat.gift", uname, giftName, giftNum);
-                }
-                // 直播开放平台付费留言
-                case "OPEN_LIVEROOM_SUPER_CHAT":
-                case "LIVE_OPEN_PLATFORM_SUPER_CHAT": {
-                    JsonObject data = json.getAsJsonObject("data");
-                    String uname = data.get("uname").getAsString();
-                    String message = data.get("message").getAsString();
-                    long rmb = data.get("rmb").getAsLong();
-                    return Component.translatable("mod.bilibilichatmcforge.chat.sc", uname, rmb, message);
-                }
-                // 直播开放平台大航海（注意：uname在user_info中，无gift_name字段）
-                case "OPEN_LIVEROOM_GUARD":
-                case "LIVE_OPEN_PLATFORM_GUARD": {
-                    JsonObject data = json.getAsJsonObject("data");
-                    JsonObject userInfo = data.getAsJsonObject("user_info");
-                    String uname = userInfo.get("uname").getAsString();
-                    int guardLevel = data.get("guard_level").getAsInt();
-                    String guardName;
-                    switch (guardLevel) {
-                        case 1: guardName = "总督"; break;
-                        case 2: guardName = "提督"; break;
-                        case 3: guardName = "舰长"; break;
-                        default: guardName = "大航海"; break;
-                    }
-                    return Component.translatable("mod.bilibilichatmcforge.chat.guard", uname, guardName);
-                }
-                // 兼容旧版弹幕格式
-                case "DANMU_MSG": {
-                    JsonArray info = json.getAsJsonArray("info");
-                    String msg = info.get(1).getAsString();
-                    JsonArray userInfo = info.get(2).getAsJsonArray();
-                    String uname = userInfo.get(1).getAsString();
-                    return Component.translatable("mod.bilibilichatmcforge.chat.danmaku", uname, msg);
-                }
-                case "SEND_GIFT": {
-                    JsonObject data = json.getAsJsonObject("data");
-                    String uname = data.get("uname").getAsString();
-                    String giftName = data.get("giftName").getAsString();
-                    int num = data.get("num").getAsInt();
-                    return Component.translatable("mod.bilibilichatmcforge.chat.gift", uname, giftName, num);
-                }
-                case "SUPER_CHAT_MESSAGE": {
-                    JsonObject data = json.getAsJsonObject("data");
-                    String uname = data.getAsJsonObject("user_info").get("uname").getAsString();
-                    String message = data.get("message").getAsString();
-                    long price = data.get("price").getAsLong();
-                    return Component.translatable("mod.bilibilichatmcforge.chat.sc", uname, price, message);
-                }
-                case "GUARD_BUY": {
-                    JsonObject data = json.getAsJsonObject("data");
-                    String uname = data.get("username").getAsString();
-                    String giftName = data.get("gift_name").getAsString();
-                    return Component.translatable("mod.bilibilichatmcforge.chat.guard", uname, giftName);
-                }
-                default:
-                    return null;
-            }
-        }
-
-        private byte[] decompress(byte[] data) throws Exception {
-            Inflater inflater = new Inflater();
-            inflater.setInput(data);
-            try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream(data.length)) {
-                byte[] buffer = new byte[1024];
-                while (!inflater.finished()) {
-                    int count = inflater.inflate(buffer);
-                    outputStream.write(buffer, 0, count);
-                }
-                return outputStream.toByteArray();
-            } finally {
-                inflater.end();
-            }
+            return out.toByteArray();
+        } catch (java.util.zip.DataFormatException e) {
+            throw new IOException("bad zlib data", e);
+        } finally {
+            inflater.end();
         }
     }
 }
