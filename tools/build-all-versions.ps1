@@ -85,7 +85,12 @@ function Get-LatestJar([string]$projectDir) {
 function Get-ModVersion([string]$jarName) {
     $segments = [IO.Path]::GetFileNameWithoutExtension($jarName).Split('-')
     for ($i = $segments.Length - 1; $i -ge 0; $i--) {
-        if ($segments[$i] -match '^\d+(\.\d+)+$') { return $segments[$i] }
+        if ($segments[$i] -match '^\d+(\.\d+)+$') {
+            if (($i -eq $segments.Length - 2) -and ($segments[$i + 1] -match '^\d+$')) {
+                return "$($segments[$i])-$($segments[$i + 1])"
+            }
+            return $segments[$i]
+        }
     }
     return $segments[-1]
 }
