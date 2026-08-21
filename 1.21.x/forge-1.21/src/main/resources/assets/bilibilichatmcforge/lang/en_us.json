@@ -13,6 +13,7 @@
   "mod.bilibilichatmcforge.error.identity_code_missing": "Identity code not configured. Please set it in config file or Mod settings.",
   "mod.bilibilichatmcforge.error.connect_failed": "Failed to connect to live room: %s",
   "mod.bilibilichatmcforge.info.connected": "Connected to Bilibili live room",
-  "mod.bilibilichatmcforge.info.update_available": "[BLChat] New version available: %s (current: %s)",
-  "mod.bilibilichatmcforge.info.update_changelog": "[BLChat] Changelog: %s"
+  "mod.bilibilichatmcforge.info.update_available": "[BLChat] Version check: your version is outdated. Latest: %s (current: %s).",
+  "mod.bilibilichatmcforge.info.update_changelog": "[BLChat] Changelog: %s",
+  "mod.bilibilichatmcforge.info.version_latest": "[BLChat] Version check: you are on the latest version (%s)"
 }

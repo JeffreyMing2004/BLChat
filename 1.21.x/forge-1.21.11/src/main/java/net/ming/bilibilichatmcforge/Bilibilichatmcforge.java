@@ -37,8 +37,8 @@ public class Bilibilichatmcforge {
         ModLoadingContext.get().registerExtensionPoint(ConfigScreenHandler.ConfigScreenFactory.class,
                 () -> new ConfigScreenHandler.ConfigScreenFactory((mc, lastScreen) -> new BilibiliConfigScreen(lastScreen)));
 
-        LOGGER.info("BLChat mod 加载成功");
-        LOGGER.info("mod识别ID：{}", MODID);
+        LOGGER.info("Current version: {}", VersionChecker.CURRENT_VERSION);
+        LOGGER.info("Version check URL: {}", VersionChecker.VERSION_URL);
     }
 
     @SubscribeEvent

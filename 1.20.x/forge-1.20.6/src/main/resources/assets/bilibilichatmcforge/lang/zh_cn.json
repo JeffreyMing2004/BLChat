@@ -14,6 +14,7 @@
   "mod.bilibilichatmcforge.error.app_start_failed": "连接直播间失败: %s",
   "mod.bilibilichatmcforge.error.connect_failed": "连接直播间失败: %s",
   "mod.bilibilichatmcforge.info.connected": "已成功连接到哔哩哔哩直播间",
-  "mod.bilibilichatmcforge.info.update_available": "[BLChat] 发现新版本: %s（当前: %s）",
-  "mod.bilibilichatmcforge.info.update_changelog": "[BLChat] 更新日志: %s"
+  "mod.bilibilichatmcforge.info.update_available": "[BLChat] 版本检测：当前版本过低，最新版本: %s（当前: %s）。",
+  "mod.bilibilichatmcforge.info.update_changelog": "[BLChat] 更新日志: %s",
+  "mod.bilibilichatmcforge.info.version_latest": "[BLChat] 版本检测：当前版本一致（%s）"
 }
