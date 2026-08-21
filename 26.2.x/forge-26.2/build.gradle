@@ -15,7 +15,26 @@ base {
     archivesName = 'bilibilichatmcforge-26.2'
 }
 group = 'net.ming'
-version = '1.0.0'
+interface BlchatVersionParams extends ValueSourceParameters {
+    RegularFileProperty getVersionFile()
+}
+
+abstract class BlchatVersionSource implements ValueSource<String, BlchatVersionParams> {
+    @Override
+    String obtain() {
+        def f = parameters.versionFile.get().asFile
+        def props = new Properties()
+        if (f.isFile()) {
+            f.withInputStream { props.load(it) }
+        }
+        return props.getProperty('mod_version', '0.0.0')
+    }
+}
+
+ext.mod_version = providers.of(BlchatVersionSource) {
+    parameters.versionFile = layout.projectDirectory.file('../../version.properties')
+}.get()
+version = mod_version
 
 compileJava {
     options.encoding = 'UTF-8'
@@ -68,3 +87,10 @@ sourceSets {
 }
 
 sourceSets.main.resources { srcDir 'src/generated/resources' }
+tasks.named('processResources', ProcessResources).configure {
+    var replaceProperties = [mod_version: mod_version]
+    inputs.properties replaceProperties
+    filesMatching(['META-INF/mods.toml', 'blchat-version.properties']) {
+        expand replaceProperties
+    }
+}

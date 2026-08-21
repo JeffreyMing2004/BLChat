@@ -7,11 +7,13 @@ import net.minecraft.server.MinecraftServer;
 import org.slf4j.Logger;
 import com.mojang.logging.LogUtils;
 
+import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 
 public class VersionChecker {
@@ -22,7 +24,7 @@ public class VersionChecker {
             .build();
 
     private static final String VERSION_URL = "https://version.mingpixel.net/26/26.1/version.blchat";
-    private static final String CURRENT_VERSION = "1.0.4.183";
+    private static final String CURRENT_VERSION = loadCurrentVersion();
 
     public static void checkAsync(MinecraftServer server) {
         CompletableFuture.runAsync(() -> {
@@ -79,38 +81,49 @@ public class VersionChecker {
     }
 
     private static boolean isNewerVersion(String remote, String local) {
-        String cleanRemote = cleanVersionString(remote);
-        String cleanLocal = cleanVersionString(local);
-        String[] remoteParts = cleanRemote.split("\\.");
-        String[] localParts = cleanLocal.split("\\.");
+        int[] remoteParts = parseVersionParts(remote);
+        int[] localParts = parseVersionParts(local);
 
         int maxLen = Math.max(remoteParts.length, localParts.length);
         for (int i = 0; i < maxLen; i++) {
-            int r = i < remoteParts.length ? parseVersionPart(remoteParts[i]) : 0;
-            int l = i < localParts.length ? parseVersionPart(localParts[i]) : 0;
+            int r = i < remoteParts.length ? remoteParts[i] : 0;
+            int l = i < localParts.length ? localParts[i] : 0;
             if (r > l) return true;
             if (r < l) return false;
         }
         return false;
     }
 
-    private static String cleanVersionString(String version) {
-        java.util.regex.Matcher m = java.util.regex.Pattern.compile("(\\d+(\\.\\d+)+)").matcher(version);
-        if (m.find()) {
-            return m.group(1);
+    private static int[] parseVersionParts(String version) {
+        java.util.List<Integer> parts = new java.util.ArrayList<>();
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("\\d+").matcher(version);
+        while (m.find()) {
+            try {
+                parts.add(Integer.parseInt(m.group()));
+            } catch (NumberFormatException e) {
+                parts.add(0);
+            }
         }
-        m = java.util.regex.Pattern.compile("(\\d+)").matcher(version);
-        if (m.find()) {
-            return m.group(1);
+        int[] result = new int[parts.size()];
+        for (int i = 0; i < result.length; i++) {
+            result[i] = parts.get(i);
         }
-        return version;
+        return result;
     }
 
-    private static int parseVersionPart(String s) {
-        try {
-            return Integer.parseInt(s.replaceAll("[^0-9].*", ""));
+    private static String loadCurrentVersion() {
+        try (InputStream is = VersionChecker.class.getResourceAsStream("/blchat-version.properties")) {
+            if (is != null) {
+                Properties props = new Properties();
+                props.load(is);
+                String v = props.getProperty("version");
+                if (v != null && !v.trim().isEmpty()) {
+                    return v.trim();
+                }
+            }
         } catch (Exception e) {
-            return 0;
+            LOGGER.warn("Failed to read bundled version info, falling back to default", e);
         }
+        return "1.0.4.0";
     }
 }

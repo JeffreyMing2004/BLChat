@@ -5,6 +5,10 @@ plugins {
 }
 
 group = mod_group_id
+def blchatVersionProps = new Properties()
+file('../../version.properties').withInputStream { blchatVersionProps.load(it) }
+ext.mod_version = blchatVersionProps.getProperty('mod_version')
+
 version = mod_version
 
 base {
@@ -75,7 +79,7 @@ tasks.named('processResources', ProcessResources).configure {
                              mod_id              : mod_id, mod_name: mod_name, mod_license: mod_license, mod_version: mod_version,
                              mod_authors         : mod_authors, mod_description: mod_description,]
     inputs.properties replaceProperties
-    filesMatching(['META-INF/mods.toml', 'pack.mcmeta']) {
+    filesMatching(['META-INF/mods.toml', 'pack.mcmeta', 'blchat-version.properties']) {
         expand replaceProperties + [project: project]
     }
 }

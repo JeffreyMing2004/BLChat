@@ -4,7 +4,7 @@ license="All Rights Reserved"
 
 [[mods]]
 modId="bilibilichatmcforge"
-version="1.0.0"
+version="${mod_version}"
 displayName="BLChat"
 displayURL="https://github.com/JeffreyMing2004"
 authors="JeffreyMing"
