@@ -5,7 +5,7 @@
 ![Minecraft](https://img.shields.io/badge/Minecraft-1.20~26.1-green)
 ![Java](https://img.shields.io/badge/Java-17_/_21_/_25-orange)
 ![Bilibili](https://img.shields.io/badge/Bilibili-Live-blue)
-![License](https://img.shields.io/badge/License-All_Rights_Reserved-yellow)
+![License](https://img.shields.io/badge/License-LGPL--2.1-blue)
 
 **在 Minecraft 游戏内实时查看 B 站直播弹幕**
 **View Bilibili live danmaku in Minecraft**
@@ -253,7 +253,8 @@ BLChat/
 
 ## 📄 License
 
-All Rights Reserved
+本项目基于 [LGPL-2.1](LICENSE) 许可证发布。
+Released under the [GNU Lesser General Public License v2.1](LICENSE).
 
 ---
 
