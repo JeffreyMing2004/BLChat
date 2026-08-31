@@ -1,0 +1,10 @@
+# GitHub 赞助按钮配置 / GitHub Sponsors button configuration
+# 取消注释并填入你的账号后，仓库右侧会出现「Sponsor this project」按钮。
+# Uncomment a line and fill in your account to show the "Sponsor this project" button.
+#
+# GitHub Sponsors 目前不向中国大陆开发者开放，推荐使用爱发电通过 custom 字段挂出：
+# custom: ["https://afdian.net/a/你的ID"]
+#
+# custom: ["https://afdian.net/a/your-id"]
+# ko-fi: your-id
+# patreon: your-id
