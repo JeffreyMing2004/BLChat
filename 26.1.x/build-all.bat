@@ -7,7 +7,7 @@ REM Output: build/libs/*.jar in each sub-project directory
 
 setlocal enabledelayedexpansion
 
-set JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-25.0.3.9-hotspot
+set JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-25.0.4.101-hotspot
 set PATH=%JAVA_HOME%\bin;%PATH%
 
 set BASE_DIR=%~dp0
