@@ -24,7 +24,7 @@ if (-not (Test-Path $outDir)) {
 }
 
 $jdk21 = 'C:\Users\Administrator\.gradle\jdks\jdk-21\jdk-21.0.12+8'
-$jdk25 = 'C:\Program Files\Eclipse Adoptium\jdk-25.0.3.9-hotspot'
+$jdk25 = 'C:\Program Files\Eclipse Adoptium\jdk-25.0.4.101-hotspot'
 
 $families = @(
     @{ Dir = '1.20.x'; Jdk = $jdk21; Projects = @('forge-1.20', 'forge-1.20.2', 'forge-1.20.6') }
