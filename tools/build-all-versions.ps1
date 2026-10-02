@@ -31,6 +31,7 @@ $families = @(
     @{ Dir = '1.21.x'; Jdk = $jdk21; Projects = @('forge-1.21', 'forge-1.21.2', 'forge-1.21.6', 'forge-1.21.11') }
     @{ Dir = '26.1.x'; Jdk = $jdk25; Projects = @('forge-26.1', 'forge-26.1.1', 'forge-26.1.2') }
     @{ Dir = '26.2.x'; Jdk = $jdk25; Projects = @('forge-26.2') }
+    @{ Dir = '26.3.x'; Jdk = $jdk25; Projects = @('forge-26.3') }
 )
 
 # 各子工程覆盖的 MC 版本段，用于发布文件名
@@ -46,6 +47,7 @@ $labels = @{
     'forge-26.1.1'  = '26.1.1'
     'forge-26.1.2'  = '26.1.2'
     'forge-26.2'    = '26.2'
+    'forge-26.3'    = '26.3'
 }
 
 function Invoke-Build([string]$familyDir, [string]$project, [string]$jdk) {

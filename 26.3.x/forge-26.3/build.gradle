@@ -1,0 +1,96 @@
+plugins {
+    id 'java'
+    id 'idea'
+    id 'eclipse'
+    id 'net.minecraftforge.gradle' version '[7.0.17,8)'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
+base {
+    archivesName = 'bilibilichatmcforge-26.3'
+}
+group = 'net.ming'
+interface BlchatVersionParams extends ValueSourceParameters {
+    RegularFileProperty getVersionFile()
+}
+
+abstract class BlchatVersionSource implements ValueSource<String, BlchatVersionParams> {
+    @Override
+    String obtain() {
+        def f = parameters.versionFile.get().asFile
+        def props = new Properties()
+        if (f.isFile()) {
+            f.withInputStream { props.load(it) }
+        }
+        return props.getProperty('mod_version', '0.0.0')
+    }
+}
+
+ext.mod_version = providers.of(BlchatVersionSource) {
+    parameters.versionFile = layout.projectDirectory.file('../../version.properties')
+}.get()
+version = mod_version
+
+compileJava {
+    options.encoding = 'UTF-8'
+}
+
+compileTestJava {
+    options.encoding = 'UTF-8'
+}
+
+repositories {
+    minecraft.mavenizer(it)
+    maven fg.forgeMaven
+    maven fg.minecraftLibsMaven
+    mavenCentral()
+}
+
+dependencies {
+    implementation minecraft.dependency('net.minecraftforge:forge:26.3-66.0.9')
+    annotationProcessor 'net.minecraftforge:eventbus-validator:7.0.6'
+}
+
+minecraft {
+    runs {
+        configureEach {
+            workingDir = layout.projectDirectory.dir('run')
+            systemProperty 'eventbus.api.strictRuntimeChecks', 'true'
+        }
+
+        register('client')
+
+        register('server') {
+            args '--nogui'
+        }
+
+        register('gameTestServer')
+
+        register('data') {
+            workingDir = layout.projectDirectory.dir('run-data')
+            args '--mod', 'bilibilichatmcforge', '--all', '--output', layout.projectDirectory.dir('src/generated/resources'), '--existing', layout.projectDirectory.dir('src/main/resources')
+        }
+    }
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir '../shared/src/main/java'
+        }
+    }
+}
+
+sourceSets.main.resources { srcDir 'src/generated/resources' }
+tasks.named('processResources', ProcessResources).configure {
+    var replaceProperties = [mod_version: mod_version]
+    inputs.properties replaceProperties
+    filesMatching(['META-INF/mods.toml', 'blchat-version.properties']) {
+        expand replaceProperties
+    }
+}

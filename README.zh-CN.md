@@ -2,8 +2,8 @@
 
 <div align="center">
 
-![Minecraft](https://img.shields.io/badge/Minecraft-1.20~26.2-green)
-![Forge](https://img.shields.io/badge/Forge-46~65-orange)
+![Minecraft](https://img.shields.io/badge/Minecraft-1.20~26.3-green)
+![Forge](https://img.shields.io/badge/Forge-46~66-orange)
 ![Java](https://img.shields.io/badge/Java-17_/_21_/_25-red)
 ![Bilibili](https://img.shields.io/badge/Bilibili-Live-fb7299)
 ![Modrinth](https://img.shields.io/badge/Modrinth-BLChat-00af54)
@@ -23,7 +23,7 @@
 
 ## 项目简介
 
-BLChat 将 B 站直播间的弹幕、礼物、Super Chat、大航海等事件实时显示在 Minecraft 游戏聊天栏中。采用多 jar 架构，覆盖 Minecraft 1.20 ~ 26.2 全版本。
+BLChat 将 B 站直播间的弹幕、礼物、Super Chat、大航海等事件实时显示在 Minecraft 游戏聊天栏中。采用多 jar 架构，覆盖 Minecraft 1.20 ~ 26.3 全版本。
 
 | 组件 | 说明 |
 |------|------|
@@ -65,6 +65,7 @@ BLChat 将 B 站直播间的弹幕、礼物、Super Chat、大航海等事件实
 | 26.1.1 | 63 | 25 | `BLChat-26.1.1-*.jar` |
 | 26.1.2 | 64 | 25 | `BLChat-26.1.2-*.jar` |
 | 26.2 | 65 | 25 | `BLChat-26.2-*.jar` |
+| 26.3 | 66 | 25 | `BLChat-26.3-*.jar` |
 
 > **注意**：MC 1.20.5 无对应 Forge 构建，使用 `BLChat-1.20.6-*.jar` 即可。
 
@@ -106,7 +107,7 @@ H5 管理面板（身份码验证、主播信息、OBS 覆盖层地址分发、�
 build-all.bat
 ```
 
-自动编译全部 11 个版本 jar 并收集到根目录 `all\` 文件夹。需要本机已安装 Java 17 / 21 / 25（`tools/build-all-versions.ps1` 中配置的路径）。
+自动编译全部 12 个版本 jar 并收集到根目录 `all\` 文件夹。需要本机已安装 Java 17 / 21 / 25（`tools/build-all-versions.ps1` 中配置的路径）。
 
 **单版本构建**：
 
@@ -141,6 +142,9 @@ BLChat/
 ├── 26.2.x/                       # MC 26.2 (Java 25)
 │   ├── shared/
 │   └── forge-26.2/               # Jar: 26.2 (Forge 65)
+├── 26.3.x/                       # MC 26.3 (Java 25)
+│   ├── shared/
+│   └── forge-26.3/               # Jar: 26.3 (Forge 66)
 ├── tools/                        # 构建与凭据工具脚本
 ├── build-all.bat                 # 一键构建全部版本
 └── version.properties            # 全局版本号（构建时注入）
@@ -152,7 +156,7 @@ BLChat/
 
 | 层 | 技术 |
 |----|------|
-| MC 模组 | Java 17 / 21 / 25 · Minecraft Forge 46~65 · 多 jar 架构 |
+| MC 模组 | Java 17 / 21 / 25 · Minecraft Forge 46~66 · 多 jar 架构 |
 | 弹幕接入 | 哔哩哔哩直播开放平台 API v2（WebSocket + 心跳） |
 | 配置存储 | JSON（`config/bilibilichat-config.json`） |
 | 版本检测 | `version.mingpixel.net` |
@@ -187,6 +191,7 @@ Copyright (C) 2026 JeffreyMing
 
 - [GitHub](https://github.com/JeffreyMing2004/BLChat)
 - [Modrinth](https://modrinth.com/mod/blchat)
+- [更新计划 / Roadmap](ROADMAP.md)
 - [问题反馈 / Issues](https://github.com/JeffreyMing2004/BLChat/issues)
 - [H5 弹幕工具 / H5 Danmaku Tool](https://h5.mingpixel.net)
 - [B 站直播开放平台 / Bilibili Live Open Platform](https://open-live.bilibili.com/)
