@@ -33,6 +33,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.Inflater;
 
 /**
@@ -60,6 +61,8 @@ public class BilibiliClient {
     private static final int MAX_PACKET_BYTES = 1024 * 1024;
     private static final int MAX_DECOMPRESSED_BYTES = 4 * 1024 * 1024;
     private static final int MAX_RECONNECTS = 5;
+    // 应用心跳连续失败达到该值，判定会话已被回收或网络已断，触发重连
+    private static final int MAX_HEARTBEAT_FAILURES = 3;
 
     private final MinecraftServer server;
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
@@ -68,12 +71,15 @@ public class BilibiliClient {
         return t;
     });
 
-    private WebSocket ws;
+    private volatile WebSocket ws;
     private ScheduledFuture<?> appHeartbeatTask;
     private ScheduledFuture<?> wsHeartbeatTask;
     private String gameId;
     private volatile boolean running;
     private int reconnects;
+    private final AtomicInteger heartbeatFailures = new AtomicInteger();
+    // 已有一次重连在排队时，忽略后续的重连请求（onClose 与心跳失败可能同时触发）
+    private volatile boolean reconnectPending;
 
     public BilibiliClient(MinecraftServer server) {
         this.server = server;
@@ -115,6 +121,9 @@ public class BilibiliClient {
     }
 
     private void connect() {
+        reconnectPending = false;
+        // 重连时上一次会话的定时器全部作废，成功后重新排
+        cancelTimers();
         try {
             JsonObject body = new JsonObject();
             body.addProperty("app_id", APP_ID);
@@ -123,13 +132,15 @@ public class BilibiliClient {
             HttpResponse<String> resp = post(API_START, GSON.toJson(body));
             JsonObject respJson = GSON.fromJson(resp.body(), JsonObject.class);
             if (respJson.get("code").getAsInt() != 0) {
-                fail(Component.translatable("mod.bilibilichatmcforge.error.app_start_failed",
-                        respJson.get("message").getAsString()));
+                // 重试由 scheduleReconnect 兜底：身份码错误这类永久性失败会在
+                // 耗尽重试次数后停止，并在聊天栏给出 B 站返回的原始原因
+                scheduleReconnect("B站接口返回错误：" + respJson.get("message").getAsString());
                 return;
             }
 
             JsonObject data = respJson.getAsJsonObject("data");
             gameId = data.getAsJsonObject("game_info").get("game_id").getAsString();
+            heartbeatFailures.set(0);
             // 项目级心跳，官方要求每 20 秒一次，断了会被回收会话
             if (appHeartbeatTask != null) appHeartbeatTask.cancel(false);
             appHeartbeatTask = scheduler.scheduleAtFixedRate(this::sendAppHeartbeat, 20, 20, TimeUnit.SECONDS);
@@ -137,8 +148,7 @@ public class BilibiliClient {
             JsonObject wsInfo = data.getAsJsonObject("websocket_info");
             List<String> links = GSON.fromJson(wsInfo.get("wss_link"), List.class);
             if (links == null || links.isEmpty()) {
-                LOGGER.error("No WSS links provided by Bilibili");
-                running = false;
+                scheduleReconnect("B站未返回 WebSocket 地址");
                 return;
             }
 
@@ -154,15 +164,69 @@ public class BilibiliClient {
             String reason = e.getCause() instanceof java.nio.channels.UnresolvedAddressException
                     ? "DNS解析失败，请检查网络连接"
                     : e.getMessage();
-            fail(Component.translatable("mod.bilibilichatmcforge.error.connect_failed", reason));
+            scheduleReconnect(reason == null ? "未知错误" : reason);
         }
     }
 
+    /**
+     * 统一的重连入口：connect 阶段失败、WebSocket 关闭、心跳丢失都走这里。
+     * 已有重连在排队时直接忽略；重试次数与 WS 断线共用同一上限。
+     */
+    private void scheduleReconnect(String reason) {
+        if (!running || reconnectPending) return;
+        if (++reconnects > MAX_RECONNECTS) {
+            fail(Component.translatable("mod.bilibilichatmcforge.error.connect_failed",
+                    reason + "，已达到最大重连次数"));
+            return;
+        }
+        reconnectPending = true;
+        cancelTimers();
+        // 置空 ws 让旧连接的迟到回调（onBinary/onClose/onOpen）按"陈旧连接"被忽略
+        closeWebSocketQuietly();
+        ws = null;
+        LOGGER.info("Reconnecting in 5 seconds ({}/{}): {}", reconnects, MAX_RECONNECTS, reason);
+        scheduler.schedule(this::connect, 5, TimeUnit.SECONDS);
+    }
+
+    private void closeWebSocketQuietly() {
+        WebSocket socket = ws;
+        if (socket == null) return;
+        try {
+            socket.sendClose(WebSocket.NORMAL_CLOSURE, "reconnect");
+        } catch (Exception e) {
+            // 连接可能已死，直接忽略
+        }
+    }
+
+    /**
+     * 应用心跳是会话存活的唯一信号。连续失败达到阈值说明会话已被回收或网络已断，
+     * 必须主动重连，否则弹幕会静默停掉而界面毫无提示。
+     */
     private void sendAppHeartbeat() {
         if (!running || gameId == null) return;
         JsonObject body = new JsonObject();
         body.addProperty("game_id", gameId);
-        postAsync(API_HEARTBEAT, GSON.toJson(body));
+        postSigned(API_HEARTBEAT, GSON.toJson(body)).whenComplete((resp, err) -> {
+            boolean ok = false;
+            if (err == null && resp != null && resp.statusCode() == 200) {
+                try {
+                    ok = GSON.fromJson(resp.body(), JsonObject.class).get("code").getAsInt() == 0;
+                } catch (Exception ignored) {
+                    // 非 JSON 或缺字段都按失败处理
+                }
+            }
+            if (ok) {
+                heartbeatFailures.set(0);
+                return;
+            }
+            int failures = heartbeatFailures.incrementAndGet();
+            if (failures < MAX_HEARTBEAT_FAILURES) {
+                LOGGER.warn("App heartbeat failed ({}/{})", failures, MAX_HEARTBEAT_FAILURES);
+                return;
+            }
+            heartbeatFailures.set(0);
+            scheduleReconnect("应用心跳连续失败，会话可能已被回收");
+        });
     }
 
     private void fail(Component msg) {
@@ -196,12 +260,12 @@ public class BilibiliClient {
         return HTTP.send(builder.build(), HttpResponse.BodyHandlers.ofString());
     }
 
-    private void postAsync(String url, String body) {
+    private CompletableFuture<HttpResponse<String>> postSigned(String url, String body) {
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .POST(HttpRequest.BodyPublishers.ofString(body));
         sign(body).forEach(builder::header);
-        HTTP.sendAsync(builder.build(), HttpResponse.BodyHandlers.ofString());
+        return HTTP.sendAsync(builder.build(), HttpResponse.BodyHandlers.ofString());
     }
 
     private JsonObject endBody(String id) {
@@ -290,6 +354,7 @@ public class BilibiliClient {
 
         @Override
         public void onOpen(WebSocket socket) {
+            if (socket != ws) return; // 旧连接的迟到回调
             send(socket, OP_AUTH, authBody);
             // 协议层心跳，30 秒一次；重连会走到新的 onOpen，旧任务先撤掉
             if (wsHeartbeatTask != null) wsHeartbeatTask.cancel(false);
@@ -301,6 +366,9 @@ public class BilibiliClient {
 
         @Override
         public CompletionStage<?> onBinary(WebSocket socket, ByteBuffer data, boolean last) {
+            if (socket != ws) {
+                return WebSocket.Listener.super.onBinary(socket, data, last); // 旧连接的迟到回调
+            }
             try {
                 handlePackets(data);
             } catch (Exception e) {
@@ -313,16 +381,9 @@ public class BilibiliClient {
         @Override
         public CompletionStage<?> onClose(WebSocket socket, int statusCode, String reason) {
             LOGGER.info("Bilibili WebSocket closed: {} {}", statusCode, reason);
-            if (!running) {
-                return WebSocket.Listener.super.onClose(socket, statusCode, reason);
+            if (socket == ws && running) {
+                scheduleReconnect("WebSocket 连接关闭（" + statusCode + "）");
             }
-            if (++reconnects > MAX_RECONNECTS) {
-                fail(Component.translatable("mod.bilibilichatmcforge.error.connect_failed",
-                        "WebSocket连接失败，已达到最大重连次数"));
-                return WebSocket.Listener.super.onClose(socket, statusCode, reason);
-            }
-            LOGGER.info("Reconnecting in 5 seconds ({}/{})", reconnects, MAX_RECONNECTS);
-            scheduler.schedule(BilibiliClient.this::connect, 5, TimeUnit.SECONDS);
             return WebSocket.Listener.super.onClose(socket, statusCode, reason);
         }
 
