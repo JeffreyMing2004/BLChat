@@ -8,7 +8,6 @@ import net.minecraftforge.event.server.ServerStoppingEvent;
 import net.minecraftforge.eventbus.api.listener.SubscribeEvent;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.client.ConfigScreenHandler;
 import net.ming.bilibilichatmcforge.client.BilibiliConfigScreen;
 import net.ming.bilibilichatmcforge.utils.BilibiliClient;
@@ -32,7 +31,6 @@ public class Bilibilichatmcforge {
     public Bilibilichatmcforge() {
         JsonConfigManager.load();
         MinecraftForge.EVENT_BUS.register(this);
-        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, Config.SPEC);
         ModLoadingContext.get().registerExtensionPoint(ConfigScreenHandler.ConfigScreenFactory.class,
                 () -> new ConfigScreenHandler.ConfigScreenFactory((mc, lastScreen) -> new BilibiliConfigScreen(lastScreen)));
 
