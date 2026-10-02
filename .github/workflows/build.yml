@@ -25,6 +25,7 @@ jobs:
           - { project: 26.1.x/forge-26.1.1,  java: "25", art: forge-26.1.1 }
           - { project: 26.1.x/forge-26.1.2,  java: "25", art: forge-26.1.2 }
           - { project: 26.2.x/forge-26.2,    java: "25", art: forge-26.2 }
+          - { project: 26.3.x/forge-26.3,    java: "25", art: forge-26.3 }
     steps:
       - uses: actions/checkout@v4
 

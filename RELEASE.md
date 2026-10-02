@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Minecraft](https://img.shields.io/badge/Minecraft-1.20~26.1-green)
+![Minecraft](https://img.shields.io/badge/Minecraft-1.20~26.3-green)
 ![Java](https://img.shields.io/badge/Java-17_/_21_/_25-orange)
 ![Bilibili](https://img.shields.io/badge/Bilibili-Live-blue)
 ![License](https://img.shields.io/badge/License-LGPL--2.1-blue)
@@ -10,7 +10,7 @@
 **在 Minecraft 游戏内实时查看 B 站直播弹幕**
 **View Bilibili live danmaku in Minecraft**
 
-支持 Minecraft 1.20 ~ 26.1.2 全版本 / Supports Minecraft 1.20 ~ 26.1.2 (all versions)
+支持 Minecraft 1.20 ~ 26.3 全版本 / Supports Minecraft 1.20 ~ 26.3 (all versions)
 
 </div>
 
@@ -18,9 +18,9 @@
 
 ## 📖 项目简介 / Overview
 
-BLChat 是一个 B 站直播弹幕 Minecraft 集成模组，将 B 站直播间的弹幕、礼物、Super Chat、大航海等事件实时显示在游戏聊天栏中。采用多 jar 架构，覆盖 Minecraft 1.20 ~ 26.1.2 全版本。
+BLChat 是一个 B 站直播弹幕 Minecraft 集成模组，将 B 站直播间的弹幕、礼物、Super Chat、大航海等事件实时显示在游戏聊天栏中。采用多 jar 架构，覆盖 Minecraft 1.20 ~ 26.3 全版本。
 
-BLChat is a Bilibili live danmaku integration mod for Minecraft, displaying real-time danmaku, gifts, Super Chat, and guard events in the game chat. Uses a multi-jar architecture covering Minecraft 1.20 ~ 26.1.2.
+BLChat is a Bilibili live danmaku integration mod for Minecraft, displaying real-time danmaku, gifts, Super Chat, and guard events in the game chat. Uses a multi-jar architecture covering Minecraft 1.20 ~ 26.3.
 
 ### 核心功能 / Core Features
 
@@ -48,10 +48,13 @@ BLChat is a Bilibili live danmaku integration mod for Minecraft, displaying real
 | 26.1 | 62 | 25 | `bilibilichatmcforge-26.1-1.0.0.jar` |
 | 26.1.1 | 63 | 25 | `bilibilichatmcforge-26.1.1-1.0.0.jar` |
 | 26.1.2 | 64 | 25 | `bilibilichatmcforge-26.1.2-1.0.0.jar` |
+| 26.2 | 65 | 25 | `BLChat-26.2-*.jar` |
+| 26.3 | 66 | 25 | `BLChat-26.3-*.jar` |
 
 > ⚠️ **注意 / Note**：
 > - MC 1.20.5 无 Forge 版本，使用 1.20.6 jar 即可 / MC 1.20.5 has no Forge build, use 1.20.6 jar
 > - 每个 jar 仅兼容对应的 MC 版本范围，请勿混用 / Each jar only supports its target MC version range
+> - 自 1.0.5 起产物更名为 `BLChat-<MC版本>-<模组版本>.jar` / Since 1.0.5 artifacts are named `BLChat-<MC>-<mod version>.jar`
 
 ---
 
@@ -120,6 +123,23 @@ BLChat is a Bilibili live danmaku integration mod for Minecraft, displaying real
 **构建验证 / Build Verification:**
 - ✅ 3 个 jar 全部构建成功
 - ✅ 3 个 jar 客户端启动成功（LWJGL OpenGL/STB 加载正常）
+
+---
+
+### Minecraft 26.2 / 26.3 适配（1.0.5 起）
+
+> 跟进 MC 26.2、26.3 版本线 / Follow-up lines for MC 26.2 and 26.3
+
+**关键适配 / Key Adaptations:**
+- 26.2：Forge 65（`26.2-65.1.0`）· loaderVersion `[65,)` · minecraft `[26.2,26.3,)`
+- 26.3：Forge 66（`26.3-66.0.9`）· loaderVersion `[66,)` · minecraft `[26.3,26.4,)`
+- Gradle wrapper 9.3.0 → 9.7.1（26.3 起，随官方 MDK）
+- eventbus-validator 7.0.1 → 7.0.6（26.3 起）
+- `pack.mcmeta` 资源包格式 101 → 121（26.3 起）
+- 版本检测路径按版本线区分：`version.mingpixel.net/26/26.2/`、`/26/26.3/`
+
+**技术栈 / Tech Stack:**
+- Forge 65 ~ 66 · Java 25 · ForgeGradle 7.x · Gradle 9.7.1
 
 ---
 
@@ -193,6 +213,8 @@ Get the streamer identity code from the [Bilibili live setup page](https://link.
 | `bilibilichatmcforge-26.1-1.0.0.jar` | 26.1 | 62 | 7 | 25 | 7.x |
 | `bilibilichatmcforge-26.1.1-1.0.0.jar` | 26.1.1 | 63 | 7 | 25 | 7.x |
 | `bilibilichatmcforge-26.1.2-1.0.0.jar` | 26.1.2 | 64 | 7 | 25 | 7.x |
+| `BLChat-26.2-*.jar` | 26.2 | 65 | 7 | 25 | 7.x |
+| `BLChat-26.3-*.jar` | 26.3 | 66 | 7 | 25 | 7.x |
 
 ---
 
@@ -225,6 +247,14 @@ BLChat/
 │   ├── forge-26.1/               # Jar: 26.1 (Forge 62, Java 25)
 │   ├── forge-26.1.1/             # Jar: 26.1.1 (Forge 63, Java 25)
 │   ├── forge-26.1.2/             # Jar: 26.1.2 (Forge 64, Java 25)
+│   └── build-all.bat             # 一键构建
+├── 26.2.x/                       # MC 26.2
+│   ├── shared/                   # 共享源码
+│   ├── forge-26.2/               # Jar: 26.2 (Forge 65, Java 25)
+│   └── build-all.bat             # 一键构建
+├── 26.3.x/                       # MC 26.3
+│   ├── shared/                   # 共享源码
+│   ├── forge-26.3/               # Jar: 26.3 (Forge 66, Java 25)
 │   └── build-all.bat             # 一键构建
 ├── build.gradle                  # Forge 构建配置 (1.20.1 legacy)
 ├── gradle.properties             # 模组版本与元数据

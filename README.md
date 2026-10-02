@@ -2,8 +2,8 @@
 
 <div align="center">
 
-![Minecraft](https://img.shields.io/badge/Minecraft-1.20~26.2-green)
-![Forge](https://img.shields.io/badge/Forge-46~65-orange)
+![Minecraft](https://img.shields.io/badge/Minecraft-1.20~26.3-green)
+![Forge](https://img.shields.io/badge/Forge-46~66-orange)
 ![Java](https://img.shields.io/badge/Java-17_/_21_/_25-red)
 ![Bilibili](https://img.shields.io/badge/Bilibili-Live-fb7299)
 ![Modrinth](https://img.shields.io/badge/Modrinth-BLChat-00af54)
@@ -23,7 +23,7 @@ Comes with a web management panel and an OBS danmaku overlay
 
 ## Overview
 
-BLChat displays danmaku (chat comments), gifts, Super Chats, and guard purchases from a Bilibili live room in the Minecraft chat, in real time. A multi-jar architecture covers Minecraft 1.20 through 26.2.
+BLChat displays danmaku (chat comments), gifts, Super Chats, and guard purchases from a Bilibili live room in the Minecraft chat, in real time. A multi-jar architecture covers Minecraft 1.20 through 26.3.
 
 | Component | Description |
 |------|------|
@@ -65,6 +65,7 @@ BLChat displays danmaku (chat comments), gifts, Super Chats, and guard purchases
 | 26.1.1 | 63 | 25 | `BLChat-26.1.1-*.jar` |
 | 26.1.2 | 64 | 25 | `BLChat-26.1.2-*.jar` |
 | 26.2 | 65 | 25 | `BLChat-26.2-*.jar` |
+| 26.3 | 66 | 25 | `BLChat-26.3-*.jar` |
 
 > **Note**: MC 1.20.5 has no matching Forge build — use the `BLChat-1.20.6-*.jar` instead.
 
@@ -106,7 +107,7 @@ At startup the mod checks the latest version against `version.mingpixel.net` and
 build-all.bat
 ```
 
-Builds all 11 version jars and collects them into `all\`. Requires local JDK 17 / 21 / 25 (paths configured in `tools/build-all-versions.ps1`).
+Builds all 12 version jars and collects them into `all\`. Requires local JDK 17 / 21 / 25 (paths configured in `tools/build-all-versions.ps1`).
 
 **Single version build**:
 
@@ -141,6 +142,9 @@ BLChat/
 ├── 26.2.x/                       # MC 26.2 (Java 25)
 │   ├── shared/
 │   └── forge-26.2/               # Jar: 26.2 (Forge 65)
+├── 26.3.x/                       # MC 26.3 (Java 25)
+│   ├── shared/
+│   └── forge-26.3/               # Jar: 26.3 (Forge 66)
 ├── tools/                        # Build & credential tooling
 ├── build-all.bat                 # One-click build for all version lines
 └── version.properties            # Global version (injected at build)
@@ -152,7 +156,7 @@ Each version line has its own `build.gradle` and Gradle wrapper. The mod version
 
 | Layer | Technology |
 |----|------|
-| MC mod | Java 17 / 21 / 25 · Minecraft Forge 46~65 · multi-jar architecture |
+| MC mod | Java 17 / 21 / 25 · Minecraft Forge 46~66 · multi-jar architecture |
 | Danmaku access | Bilibili Live Open Platform API v2 (WebSocket + heartbeat) |
 | Config storage | JSON (`config/bilibilichat-config.json`) |
 | Version check | `version.mingpixel.net` |
@@ -187,6 +191,7 @@ Released under the [GNU Lesser General Public License v2.1](LICENSE).
 
 - [GitHub](https://github.com/JeffreyMing2004/BLChat)
 - [Modrinth](https://modrinth.com/mod/blchat)
+- [Roadmap](ROADMAP.md)
 - [Issues](https://github.com/JeffreyMing2004/BLChat/issues)
 - [H5 Danmaku Tool](https://h5.mingpixel.net)
 - [Bilibili Live Open Platform](https://open-live.bilibili.com/)

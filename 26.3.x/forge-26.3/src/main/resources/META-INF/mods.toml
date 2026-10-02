@@ -1,0 +1,26 @@
+modLoader="javafml"
+loaderVersion="[66,)"
+license="LGPL-2.1"
+
+[[mods]]
+modId="bilibilichatmcforge"
+version="${mod_version}"
+displayName="BLChat"
+displayURL="https://github.com/JeffreyMing2004"
+authors="JeffreyMing"
+description='''A tool for viewing danmaku in MC'''
+clientSideOnly=true
+
+[[dependencies.bilibilichatmcforge]]
+    modId="forge"
+    mandatory=true
+    versionRange="[66,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.bilibilichatmcforge]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="[26.3,26.4,)"
+    ordering="NONE"
+    side="BOTH"
