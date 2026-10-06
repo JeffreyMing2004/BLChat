@@ -192,6 +192,7 @@ Copyright (C) 2026 JeffreyMing
 - [GitHub](https://github.com/JeffreyMing2004/BLChat)
 - [Modrinth](https://modrinth.com/mod/blchat)
 - [更新计划 / Roadmap](ROADMAP.md)
+- [更新日志 / Changelog](CHANGELOG.md)
 - [问题反馈 / Issues](https://github.com/JeffreyMing2004/BLChat/issues)
 - [H5 弹幕工具 / H5 Danmaku Tool](https://h5.mingpixel.net)
 - [B 站直播开放平台 / Bilibili Live Open Platform](https://open-live.bilibili.com/)

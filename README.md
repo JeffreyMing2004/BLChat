@@ -192,6 +192,7 @@ Released under the [GNU Lesser General Public License v2.1](LICENSE).
 - [GitHub](https://github.com/JeffreyMing2004/BLChat)
 - [Modrinth](https://modrinth.com/mod/blchat)
 - [Roadmap](ROADMAP.md)
+- [Changelog](CHANGELOG.md)
 - [Issues](https://github.com/JeffreyMing2004/BLChat/issues)
 - [H5 Danmaku Tool](https://h5.mingpixel.net)
 - [Bilibili Live Open Platform](https://open-live.bilibili.com/)

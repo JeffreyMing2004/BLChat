@@ -136,7 +136,7 @@
 - [ ] **单元测试** — 协议解析（`handlePackets` 用录制样例二进制包）、版本比较（曾出非标准版本号 bug）、HMAC 签名、`guardName`、配置迁移逻辑；均不依赖 MC 类，JUnit 直接跑
 - [ ] **发布自动化** — 打 tag → GitHub Actions 自动 Release（附 12 个 jar 与更新说明）→ 推送 Modrinth
 - [ ] **CI 缓存** — `actions/setup-java` 加 `cache: gradle`，当前每次构建全量下载依赖
-- [ ] **文档还账** — 新建 `CHANGELOG.md`；`RELEASE.md` 整体重构（当前版本历史停在 v1.0.3/26.1.2，仓库链接还是旧仓库名 `BilibiliChat-MC-Forge`）；CONTRIBUTING 补「加版本线」指引
+- [ ] **文档还账** — ~~新建 `CHANGELOG.md`~~（✅ 2026-10-02 已建立，按时间线归并早期按线独立版本号的口径）；`RELEASE.md` 整体重构仍待做（当前版本历史停在 v1.0.3/26.1.2，仓库链接还是旧仓库名 `BilibiliChat-MC-Forge`）；CONTRIBUTING 补「加版本线」指引
 
 ### v1.3 — 互动玩法
 

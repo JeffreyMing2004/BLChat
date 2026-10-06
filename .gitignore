@@ -32,9 +32,6 @@ proguard.zip
 allatori.zip
 allatori-temp/
 
-##doc
-CHANGELOG.md
-
 # IDE
 .idea
 *.iml
