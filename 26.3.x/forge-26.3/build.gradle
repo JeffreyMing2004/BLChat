@@ -31,9 +31,11 @@ abstract class BlchatVersionSource implements ValueSource<String, BlchatVersionP
     }
 }
 
-ext.mod_version = providers.of(BlchatVersionSource) {
+def baseVersion = providers.of(BlchatVersionSource) {
     parameters.versionFile = layout.projectDirectory.file('../../version.properties')
 }.get()
+// All Minecraft builds use the exact root version, without build suffixes.
+ext.mod_version = baseVersion
 version = mod_version
 
 compileJava {

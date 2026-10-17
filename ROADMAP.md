@@ -99,7 +99,7 @@
 ### P2 — 打磨
 
 - [ ] **F9. `guardName` 硬编码中文**（`BilibiliClient.java:437-443`）：总督/提督/舰长作为字符串参数传入 translatable 模板，英文用户看到中文。改为 `guard.level.1/2/3` 翻译键。
-- [ ] **F10. `VersionChecker` 版本回退值误导**（`VersionChecker.java:132`）：资源读取失败时回退 `"1.0.4.0"`，会参与版本比较；改为回退 `"0"`（永不提示更新）并告警。
+- [x] **F10. `VersionChecker` 版本回退值误导**：资源读取失败时标记为 `unknown` 并跳过版本比较，不再使用硬编码的旧版本号。
 - [ ] **F11. `VersionCompat.checkPermission` 忽略 level 参数**（`VersionCompat.java:52`）：形参 `level` 未使用，恒判 GAMEMASTERS。要么按 level 映射权限，要么删参数并在调用处注明。
 - [ ] **F12. 配置屏幕无状态反馈**：不显示当前连接状态/直播间号，空身份码点保存无提示。配合 v1.1 的 `/bilibili status` 一起做。
 - [ ] **F13. 指令改码不回写屏幕**：从指令设置后打开配置屏幕能看到新值（都读 JSON），无需修改；此条核实后关闭即可。
@@ -160,19 +160,19 @@
 
 ## 版本与发布计划
 
-- **版本号**：单一来源 `version.properties`（`mod_version=1.0.5-308`，`-308` 为构建号），构建时注入 `mods.toml` 与 `blchat-version.properties`。修复版 +1 次版本号（1.0.6），功能里程碑按次版本号（1.1.0）
+- **版本号**：根目录 `version.properties` 是唯一来源，当前完整版本号为 `1.5.308`。所有 12 个模块、CI 与本地构建直接使用该版本，不追加时间戳；后续发布统一递增（例如 `1.5.309`），并同步更新全部 5 个版本检测接口。
 - **发布流程**（v1.2 自动化前的手工版）：
   1. `version.properties` 升版本号
   2. 全版本修复同步到各线 shared（CI 一致性校验落地前人工核对 diff）
   3. 本地 `build-all.bat` 或推送触发 CI，跑[回归测试清单](#回归测试清单)
   4. GitHub Release：`v<版本>` tag，附 12 个 jar（命名 `BLChat-<MC版本段>-<模组版本>.jar`）与更新说明
   5. Modrinth 同步发布（支持版本矩阵在后台勾选）
-  6. `version.mingpixel.net` 对应版本线路径更新 `version.blchat`（JSON：`version` + `changelog` 字段）
+  6. `version.minguncle.cn` 对应版本线路径更新 `version.blchat`（JSON：`version` + `changelog` 字段）
 - **Beta 通道**：README 承诺赞助者优先体验 Beta。方案：GitHub prerelease + 赞助者群发链接，稳定后转正发布。v1.1 发布前落地
 
 ## 服务端协同待办
 
-- [ ] `version.mingpixel.net` 新增 `/26/26.3/version.blchat`（26.3 客户端已在请求，缺失时只告警 404）
+- [ ] `version.minguncle.cn` 新增 `/26/26.3/version.blchat`（26.3 客户端已在请求，缺失时只告警 404）
 - [ ] 评估版本检测路径收敛：模组端改为统一路径 + 版本线参数（如 `/check?line=26.3`），以后加版本线不用配服务端路由
 - [ ] v2.0 代理模式的后端排期（H5 后端独立仓库，需预留签名转发接口）
 

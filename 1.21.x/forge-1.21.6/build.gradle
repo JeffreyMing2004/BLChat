@@ -8,7 +8,7 @@ group = mod_group_id
 def blchatVersionProps = new Properties()
 file('../../version.properties').withInputStream { blchatVersionProps.load(it) }
 ext.mod_version = blchatVersionProps.getProperty('mod_version')
-
+// All Minecraft builds use the exact root version, without build suffixes.
 version = mod_version
 
 base {

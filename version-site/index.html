@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="description" content="检查适用于你的 Minecraft 版本的 BLChat 更新，查看最新版本及更新日志。">
+  <title>BLChat · 版本检测</title>
+  <style>
+    :root { font-family: Inter, "Segoe UI", "Microsoft YaHei", sans-serif; color: #18312e; background: #f4f6f2; font-synthesis: none; }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    a { color: #236d5b; text-underline-offset: 4px; }
+    header, main, footer { max-width: 1060px; margin: auto; padding: 0 28px; }
+    header { min-height: 100px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+    .brand { display: flex; align-items: center; gap: 12px; font-size: 21px; font-weight: 800; letter-spacing: -.5px; text-decoration: none; color: inherit; }
+    .logo { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: #214d41; color: white; font-size: 21px; }
+    .header-link { font-size: 13px; text-decoration: none; }
+    main { padding-top: 45px; padding-bottom: 64px; }
+    .eyebrow { color: #477164; font-size: 12px; font-weight: 700; letter-spacing: 2px; }
+    h1 { font-size: clamp(32px, 5vw, 48px); letter-spacing: -2px; margin: 17px 0; line-height: 1.2; }
+    .intro { color: #687670; font-size: 15px; line-height: 1.9; margin: 0 0 38px; }
+    .layout { display: grid; grid-template-columns: 1.08fr 1fr; gap: 22px; align-items: stretch; }
+    .panel { border: 1px solid #dfe5dc; border-radius: 20px; background: #fff; padding: 30px; }
+    h2 { font-size: 18px; margin: 0 0 8px; }
+    .muted { color: #718078; font-size: 13px; line-height: 1.8; margin: 0; }
+    label { display: block; font-size: 13px; font-weight: 650; margin: 27px 0 10px; }
+    input, select, button { font: inherit; }
+    input, select { width: 100%; min-height: 48px; border: 1px solid #d6dfd7; border-radius: 9px; padding: 11px 13px; background: #fbfcfa; color: #18312e; font-size: 14px; }
+    input::placeholder { color: #8c978f; }
+    :focus-visible { outline: 3px solid #a9cebb; outline-offset: 3px; }
+    .hint { font-size: 12px; color: #7a867e; margin: 9px 0 0; line-height: 1.7; }
+    button { width: 100%; border: 0; border-radius: 9px; padding: 14px; margin-top: 27px; font-size: 14px; font-weight: 650; background: #245c49; color: #fff; cursor: pointer; }
+    button:hover { background: #194a39; }
+    button:disabled { opacity: .65; cursor: wait; }
+    .result { display: flex; flex-direction: column; background: #edf3eb; border-color: #dbe5d7; }
+    .badge { display: inline-flex; align-items: center; gap: 7px; width: fit-content; font-size: 12px; padding: 7px 11px; background: #fff; border-radius: 30px; color: #597064; }
+    .badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .result[data-state="error"] .badge { color: #a43d29; }
+    .result[data-state="update"] .badge { color: #2762aa; }
+    .result[data-state="latest"] .badge { color: #236b45; }
+    .result h2 { font-size: 27px; margin: 28px 0 12px; letter-spacing: -.6px; }
+    #message { font-size: 14px; line-height: 1.9; color: #5c7063; margin: 0 0 25px; overflow-wrap: anywhere; }
+    .version-row { display: flex; justify-content: space-between; gap: 16px; padding: 16px 0; border-top: 1px solid #d7e2d4; font-size: 13px; }
+    .version-row span { color: #6c7e70; flex-shrink: 0; }
+    .version-row strong { text-align: right; overflow-wrap: anywhere; min-width: 0; }
+    .download { display: inline-block; margin-top: 15px; font-size: 14px; font-weight: 650; }
+    [hidden] { display: none !important; }
+    .notes { margin-top: 22px; }
+    #changelog { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; line-height: 1.9; color: #596c60; margin: 20px 0 0; }
+    .details { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-top: 23px; font-size: 12px; color: #7e8a80; }
+    .details a { color: inherit; overflow-wrap: anywhere; }
+    footer { border-top: 1px solid #dee5db; padding-top: 24px; padding-bottom: 28px; display: flex; justify-content: space-between; gap: 20px; font-size: 12px; color: #7a877c; }
+    @media (max-width: 680px) { header, main, footer { padding-left: 20px; padding-right: 20px; } header { min-height: 78px; } main { padding-top: 25px; } .layout { grid-template-columns: 1fr; } .panel { padding: 24px; } footer { flex-direction: column; gap: 8px; } }
+  </style>
+</head>
+<body>
+  <header>
+    <a class="brand" href="https://github.com/JeffreyMing2004/BLChat"><span class="logo" aria-hidden="true">b</span> BLChat</a>
+    <a class="header-link" href="https://github.com/JeffreyMing2004/BLChat/releases">查看所有发布版本 ↗</a>
+  </header>
+  <main>
+    <div class="eyebrow">BLCHAT / VERSION CHECK</div>
+    <h1>让弹幕，保持最新。</h1>
+    <p class="intro">查看适用于你的 Minecraft 版本的 BLChat 更新。<br>选择游戏版本，即可获取对应版本线的最新发布信息。</p>
+    <noscript><p>请启用 JavaScript 后使用版本检测功能。</p></noscript>
+    <div class="layout">
+      <section class="panel" aria-labelledby="form-title">
+        <h2 id="form-title">检查你的版本</h2>
+        <p class="muted">版本信息可在游戏的 Mods 列表中找到。</p>
+        <form id="check-form">
+          <label for="minecraft">Minecraft 版本</label>
+          <select id="minecraft" name="minecraft">
+            <option value="1.20">1.20 – 1.20.1</option>
+            <option value="1.20.2">1.20.2 – 1.20.4</option>
+            <option value="1.20.6">1.20.6</option>
+            <option value="1.21">1.21 – 1.21.1</option>
+            <option value="1.21.2">1.21.2 – 1.21.5</option>
+            <option value="1.21.6">1.21.6 – 1.21.10</option>
+            <option value="1.21.11">1.21.11</option>
+            <option value="26.1">26.1</option>
+            <option value="26.1.1">26.1.1</option>
+            <option value="26.1.2">26.1.2</option>
+            <option value="26.2">26.2</option>
+            <option value="26.3">26.3</option>
+          </select>
+          <label for="installed">已安装的 BLChat 版本 <span class="muted">（选填）</span></label>
+          <input id="installed" name="installed" type="text" placeholder="例如 1.5.308" autocomplete="off" spellcheck="false" maxlength="120" pattern="[vV]?[0-9]+(\.[0-9]+)*" aria-describedby="version-hint">
+          <p class="hint" id="version-hint">所有 Minecraft 版本共用 BLChat 版本号；留空仅查询最新版。</p>
+          <button id="check-button" type="submit">检查更新 <span aria-hidden="true">→</span></button>
+        </form>
+      </section>
+      <section class="panel result" id="result" data-state="idle" aria-live="polite" aria-atomic="true" aria-labelledby="result-title">
+        <div class="badge" id="status">等待检测</div>
+        <h2 id="result-title">准备好迎接更新</h2>
+        <p id="message">选择游戏版本并点击「检查更新」，这里将显示对应的版本信息。</p>
+        <div class="version-row"><span>当前版本</span><strong id="current-version">未填写</strong></div>
+        <div class="version-row"><span>最新版本</span><strong id="latest-version">待查询</strong></div>
+        <a class="download" id="download" href="https://github.com/JeffreyMing2004/BLChat/releases" hidden>前往下载对应版本 ↗</a>
+      </section>
+    </div>
+    <section class="panel notes" id="notes" hidden aria-labelledby="notes-title">
+      <h2 id="notes-title">更新日志</h2>
+      <p class="muted" id="notes-line"></p>
+      <p id="changelog"></p>
+    </section>
+    <div class="details"><span>检测服务：<a id="endpoint" href="https://version.minguncle.cn/1.20/version.blchat">version.minguncle.cn</a></span><span id="checked-at">尚未查询</span></div>
+  </main>
+  <footer><span>BLChat · 让直播与方块世界相连</span><span>支持 Minecraft 1.20 – 26.3 · Forge</span></footer>
+  <script>
+    'use strict';
+    const BASE_URL = 'https://version.minguncle.cn';
+    const VERSION_PATHS = Object.freeze({
+      '1.20': '/1.20/version.blchat', '1.20.2': '/1.20/version.blchat', '1.20.6': '/1.20/version.blchat',
+      '1.21': '/1.21/version.blchat', '1.21.2': '/1.21/version.blchat', '1.21.6': '/1.21/version.blchat', '1.21.11': '/1.21/version.blchat',
+      '26.1': '/26/26.1/version.blchat', '26.1.1': '/26/26.1/version.blchat', '26.1.2': '/26/26.1/version.blchat',
+      '26.2': '/26/26.2/version.blchat', '26.3': '/26/26.3/version.blchat'
+    });
+    const $ = id => document.getElementById(id);
+    const validVersion = value => typeof value === 'string' && value.length <= 120 && /^[vV]?\d+(?:\.\d+)*$/.test(value);
+    // Match the mod's numeric-component comparison, including optional build numbers.
+    function compareVersions(remote, local) {
+      const a = remote.match(/\d+/g).map(BigInt);
+      const b = local.match(/\d+/g).map(BigInt);
+      for (let i = 0; i < Math.max(a.length, b.length); i++) {
+        const x = a[i] ?? 0n, y = b[i] ?? 0n;
+        if (x !== y) return x > y ? 1 : -1;
+      }
+      return 0;
+    }
+    function parseResponse(body) {
+      const text = body.trim();
+      let data;
+      try { data = JSON.parse(text); } catch { data = text; }
+      const version = typeof data === 'string' ? data : data?.version;
+      if (!validVersion(version)) throw new Error('版本服务返回了无效数据，请稍后重试。');
+      return { version, changelog: typeof data?.changelog === 'string' ? data.changelog : '' };
+    }
+    let controller = null;
+    let requestId = 0;
+    function setStatus(state, badge, title, message) {
+      $('result').dataset.state = state;
+      $('status').textContent = badge;
+      $('result-title').textContent = title;
+      $('message').textContent = message;
+    }
+    function resetResult() {
+      requestId++;
+      controller?.abort();
+      $('check-button').disabled = false;
+      $('check-button').textContent = '检查更新 →';
+      $('result').setAttribute('aria-busy', 'false');
+      $('endpoint').href = BASE_URL + VERSION_PATHS[$('minecraft').value];
+      $('current-version').textContent = $('installed').value.trim() || '未填写';
+      $('latest-version').textContent = '待查询';
+      $('checked-at').textContent = '尚未查询';
+      $('notes').hidden = true;
+      $('download').hidden = true;
+      setStatus('idle', '等待检测', '准备好迎接更新', '点击「检查更新」，获取所选游戏版本的最新发布信息。');
+    }
+    $('minecraft').addEventListener('change', resetResult);
+    $('installed').addEventListener('input', resetResult);
+    $('check-form').addEventListener('submit', async event => {
+      event.preventDefault();
+      resetResult();
+      const local = $('installed').value.trim();
+      if (local && !validVersion(local)) {
+        setStatus('error', '格式有误', '请检查版本号', '请输入数字与点组成的版本号，例如 1.5.308。');
+        return;
+      }
+      const id = requestId;
+      const selected = $('minecraft').selectedOptions[0].textContent;
+      const activeController = new AbortController();
+      controller = activeController;
+      const timeout = setTimeout(() => activeController.abort(), 15000);
+      $('check-button').disabled = true;
+      $('check-button').textContent = '正在检查…';
+      $('result').setAttribute('aria-busy', 'true');
+      setStatus('loading', '正在连接', '正在查询最新版本', `正在获取 Minecraft ${selected} 对应的 BLChat 发布信息。`);
+      try {
+        const response = await fetch(BASE_URL + VERSION_PATHS[$('minecraft').value], { signal: activeController.signal, cache: 'no-store', credentials: 'omit' });
+        if (!response.ok) throw new Error(response.status === 404 ? '该游戏版本的检测数据暂未发布，请稍后重试。' : `版本服务暂不可用（HTTP ${response.status}），请稍后重试。`);
+        const data = parseResponse(await response.text());
+        if (id !== requestId) return;
+        $('latest-version').textContent = data.version;
+        if (!local) setStatus('latest', '查询成功', '已找到最新发布', `Minecraft ${selected} 对应的最新 BLChat 版本为 ${data.version}。填写已安装版本可进一步比较。`);
+        else {
+          const comparison = compareVersions(data.version, local);
+          if (comparison > 0) setStatus('update', '有更新可用', '新的弹幕体验已就绪', '发现更高版本。下载时，请选择与你的 Minecraft 版本对应的 JAR 文件。');
+          else if (comparison === 0) setStatus('latest', '已是最新', '你已跟上最新版本', '当前版本与版本服务公布的最新版本一致。');
+          else setStatus('latest', '本地版本较新', '你的版本领先于发布信息', '已安装版本高于服务端公布版本，无需降级。');
+        }
+        $('download').hidden = Boolean(local && compareVersions(data.version, local) <= 0);
+        $('notes-line').textContent = `Minecraft ${selected} · BLChat ${data.version}`;
+        $('changelog').textContent = data.changelog || '此版本暂未提供更新日志。';
+        $('notes').hidden = false;
+        $('checked-at').textContent = `查询时间：${new Date().toLocaleString('zh-CN')}`;
+      } catch (error) {
+        if (id !== requestId) return;
+        const message = error.name === 'AbortError' ? '连接超过 15 秒，请检查网络后重试。' : error instanceof TypeError ? '无法连接版本服务，请检查网络或稍后重试。' : error.message;
+        setStatus('error', '检测失败', '暂时无法获取版本', message);
+        $('latest-version').textContent = '获取失败';
+      } finally {
+        clearTimeout(timeout);
+        if (id === requestId) {
+          $('check-button').disabled = false;
+          $('check-button').textContent = '重新检查 →';
+          $('result').setAttribute('aria-busy', 'false');
+        }
+      }
+    });
+  </script>
+</body>
+</html>

@@ -97,7 +97,7 @@ BLChat displays danmaku (chat comments), gifts, Super Chats, and guard purchases
 
 The H5 web panel (identity-code verification, streamer info, OBS overlay URL dispatch, mod version-check API) and the OBS danmaku overlay are maintained and deployed separately — see <https://h5.mingpixel.net>.
 
-At startup the mod checks the latest version against `version.mingpixel.net` and notifies players in game when an update is available.
+At startup the mod checks the latest version against `version.minguncle.cn` and notifies players in game when an update is available.
 
 ## Build from Source
 
@@ -150,7 +150,7 @@ BLChat/
 └── version.properties            # Global version (injected at build)
 ```
 
-Each version line has its own `build.gradle` and Gradle wrapper. The mod version comes from the root `version.properties` and is injected into `blchat-version.properties` and `mods.toml` at build time.
+Each version line has its own `build.gradle` and Gradle wrapper. The mod version comes from the root `version.properties` and is injected into `blchat-version.properties` and `mods.toml` at build time. All 12 build modules use the same complete version (currently `1.5.308`), without timestamp or build suffixes. For the next release, update the root `mod_version` (for example, to `1.5.309`) and synchronize all five version-check endpoints. Minecraft version ranges still distinguish the JAR files.
 
 ## Tech Stack
 
@@ -159,7 +159,7 @@ Each version line has its own `build.gradle` and Gradle wrapper. The mod version
 | MC mod | Java 17 / 21 / 25 · Minecraft Forge 46~66 · multi-jar architecture |
 | Danmaku access | Bilibili Live Open Platform API v2 (WebSocket + heartbeat) |
 | Config storage | JSON (`config/bilibilichat-config.json`) |
-| Version check | `version.mingpixel.net` |
+| Version check | `version.minguncle.cn` |
 | H5 panel (deployed separately) | Node.js · Express · WebSocket · Vue 3 · SQLite · JWT |
 
 ## Notes

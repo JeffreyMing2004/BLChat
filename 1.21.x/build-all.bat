@@ -11,6 +11,7 @@ set JAVA_HOME=C:\Users\Administrator\.gradle\jdks\jdk-21\jdk-21.0.12+8
 set PATH=%JAVA_HOME%\bin;%PATH%
 
 set BASE_DIR=%~dp0
+
 set PROJECTS=forge-1.21 forge-1.21.2 forge-1.21.6 forge-1.21.11
 
 echo ============================================================

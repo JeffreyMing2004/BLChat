@@ -136,7 +136,7 @@ BLChat is a Bilibili live danmaku integration mod for Minecraft, displaying real
 - Gradle wrapper 9.3.0 → 9.7.1（26.3 起，随官方 MDK）
 - eventbus-validator 7.0.1 → 7.0.6（26.3 起）
 - `pack.mcmeta` 资源包格式 101 → 121（26.3 起）
-- 版本检测路径按版本线区分：`version.mingpixel.net/26/26.2/`、`/26/26.3/`
+- 版本检测路径按版本线区分：`version.minguncle.cn/26/26.2/`、`/26/26.3/`
 
 **技术栈 / Tech Stack:**
 - Forge 65 ~ 66 · Java 25 · ForgeGradle 7.x · Gradle 9.7.1

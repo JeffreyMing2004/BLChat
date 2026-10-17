@@ -97,7 +97,7 @@ BLChat 将 B 站直播间的弹幕、礼物、Super Chat、大航海等事件实
 
 H5 管理面板（身份码验证、主播信息、OBS 覆盖层地址分发、模组版本检测接口）与 OBS 弹幕覆盖层独立于本仓库部署与维护，详见 <https://h5.mingpixel.net>。
 
-本模组启动时访问版本检测服务（`version.mingpixel.net`）比对最新版本，版本过低时在游戏内提示更新。
+本模组启动时访问版本检测服务（`version.minguncle.cn`）比对最新版本，版本过低时在游戏内提示更新。
 
 ## 从源码构建
 
@@ -150,7 +150,7 @@ BLChat/
 └── version.properties            # 全局版本号（构建时注入）
 ```
 
-每个版本线内含独立的 `build.gradle` 与 Gradle Wrapper；模组版本号统一来自根目录 `version.properties`，构建时自动生成 `blchat-version.properties` 与 `mods.toml`。
+每个版本线内含独立的 `build.gradle` 与 Gradle Wrapper；模组版本号统一来自根目录 `version.properties`，构建时自动生成 `blchat-version.properties` 与 `mods.toml`。所有 12 个构建模块使用同一完整版本号（当前 `1.5.308`），不追加时间戳或构建后缀。后续发布只需修改根目录的 `mod_version`，例如递增为 `1.5.309`，并将 5 个版本检测接口的数据同步为该版本号。Minecraft 版本段仅用于区分安装包。
 
 ## 技术栈
 
@@ -159,7 +159,7 @@ BLChat/
 | MC 模组 | Java 17 / 21 / 25 · Minecraft Forge 46~66 · 多 jar 架构 |
 | 弹幕接入 | 哔哩哔哩直播开放平台 API v2（WebSocket + 心跳） |
 | 配置存储 | JSON（`config/bilibilichat-config.json`） |
-| 版本检测 | `version.mingpixel.net` |
+| 版本检测 | `version.minguncle.cn` |
 | H5 面板（独立部署） | Node.js · Express · WebSocket · Vue 3 · SQLite · JWT |
 
 ## 注意事项

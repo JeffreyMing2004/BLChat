@@ -23,10 +23,14 @@ public class VersionChecker {
             .connectTimeout(Duration.ofSeconds(10))
             .build();
 
-    public static final String VERSION_URL = "https://version.mingpixel.net/26/26.2/version.blchat";
+    public static final String VERSION_URL = "https://version.minguncle.cn/26/26.2/version.blchat";
     public static final String CURRENT_VERSION = loadCurrentVersion();
 
     public static void checkAsync(MinecraftServer server) {
+        if ("unknown".equals(CURRENT_VERSION)) {
+            LOGGER.warn("Skipping version check: bundled version information is unavailable");
+            return;
+        }
         CompletableFuture.runAsync(() -> {
             try {
                 HttpRequest request = HttpRequest.newBuilder()
@@ -127,8 +131,8 @@ public class VersionChecker {
                 }
             }
         } catch (Exception e) {
-            LOGGER.warn("Failed to read bundled version info, falling back to default", e);
+            LOGGER.warn("Failed to read bundled version info", e);
         }
-        return "1.0.4.0";
+        return "unknown";
     }
 }
